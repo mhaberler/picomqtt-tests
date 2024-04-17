@@ -1,0 +1,3 @@
+[submodule "lib/PicoMQTT"]
+	path = lib/PicoMQTT
+	url = https://github.com/mhaberler/PicoMQTT.git
