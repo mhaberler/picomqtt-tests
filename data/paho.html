@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paho MQTT JS Example</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"
+        type="text/javascript"></script>
+</head>
+
+<body>
+    <h1>MQTT Example</h1>
+    <script type="text/javascript">
+        var client = new Paho.MQTT.Client(location.host, 81, "clientId");
+
+        // Set callback handlers
+        client.onConnectionLost = onConnectionLost;
+        client.onMessageArrived = onMessageArrived;
+
+        // Connect the client
+        client.connect({
+            onSuccess: onConnect,
+            onFailure: onFailure,
+            useSSL: false // Change to true if your broker uses SSL
+        });
+
+        // Called when the client connects
+        function onConnect() {
+            console.log("Connected");
+            // Subscribe to a topic
+            client.subscribe("#");
+        }
+
+        // Called when the client loses its connection
+        function onConnectionLost(responseObject) {
+            if (responseObject.errorCode !== 0) {
+                console.log("Connection lost:", responseObject.errorMessage);
+            }
+        }
+
+        // Called when a message arrives
+        function onMessageArrived(message) {
+            console.log("Message arrived:", message.payloadString);
+        }
+
+        // Called when the connection fails
+        function onFailure(errorMessage) {
+            console.log("Connection failed:", errorMessage.errorMessage);
+        }
+
+        // Publish a message
+        function publishMessage() {
+            var message = new Paho.MQTT.Message("Hello, Paho MQTT JS here!");
+            message.destinationName = "blah";
+            client.send(message);
+        }
+    </script>
+    <button onclick="publishMessage()">Publish Message</button>
+</body>
+
+</html>

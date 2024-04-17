@@ -1,0 +1,84 @@
+{
+    "dashboards": [
+        {
+            "dashboardName": "test",
+            "dashboardPrefixTopic": "",
+            "connectionId": "connection_0",
+            "dashboardColor": "success",
+            "dashboardIcon": "dashboard",
+            "lockPanels": false,
+            "dashboardId": "dashboard_0"
+        }
+    ],
+    "globalSettings": {
+        "appTheme": "default",
+        "runInBackground": true,
+        "defaultConnection": "connection_0"
+    },
+    "dataVersion": 152,
+    "connections": [
+        {
+            "enableWillMessage": false,
+            "connectionName": "esp",
+            "willTopic": "",
+            "willQoS": 0,
+            "host": "broker.local",
+            "defaultDashboard": "dashboard_0",
+            "caCertificateFileName": "",
+            "allowUntrustCACertificate": false,
+            "clientCertificateFileName": "",
+            "willRetain": false,
+            "clientKeyFileName": "",
+            "autoConnect": true,
+            "connectionId": "connection_0",
+            "keepAlive": 60,
+            "port": 81,
+            "disableHostnameCheck": false,
+            "cleanSession": true,
+            "notifyOnDisconnect": false,
+            "willPayload": "",
+            "clientId": "ios",
+            "connectionType": "ws",
+            "sslClientPassword": "",
+            "password": "",
+            "username": ""
+        }
+    ],
+    "panels": [
+        {
+            "comboItemList": [
+                {
+                    "notificationRegex": "",
+                    "unit": "",
+                    "notificationMax": "",
+                    "label": "degree",
+                    "notificationFilter": "all",
+                    "showArea": false,
+                    "messageFactor": 1,
+                    "notificationMin": "",
+                    "enableNotification": false,
+                    "color": "#ea1111",
+                    "topic": "picomqtt\/esp-cpu-temperature",
+                    "notificationMessage": "<payload>",
+                    "notificationValue": "",
+                    "showPoints": false,
+                    "jsonPath": "",
+                    "isJSONPayload": false
+                }
+            ],
+            "disableDashboardPrefix": false,
+            "smoothCurve": false,
+            "panelMergeClass": "",
+            "qos": 0,
+            "panelName": "temp",
+            "type": "line-graph",
+            "connectionId": "connection_0",
+            "panelId": "panel_0",
+            "dashboardId": "dashboard_0",
+            "mqttType": "sub",
+            "maxPersistence": 10,
+            "maxDuraion": "",
+            "panelWidth": "100"
+        }
+    ]
+}
