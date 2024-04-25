@@ -1,3 +1,6 @@
 [submodule "lib/PicoMQTT"]
 	path = lib/PicoMQTT
 	url = https://github.com/mhaberler/PicoMQTT.git
+[submodule "lib/PicoWebsocket"]
+	path = lib/PicoWebsocket
+	url = https://github.com/mlesniew/PicoWebsocket.git
