@@ -4,3 +4,6 @@
 [submodule "lib/PicoWebsocket"]
 	path = lib/PicoWebsocket
 	url = https://github.com/mlesniew/PicoWebsocket.git
+[submodule "myhelloiot"]
+	path = myhelloiot
+	url = https://github.com/mhaberler/myhelloiot/
