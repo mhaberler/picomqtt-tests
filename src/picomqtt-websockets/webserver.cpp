@@ -1,14 +1,39 @@
 #include <ESPmDNS.h>
 #include <WebServer.h>
 #include <WiFiMulti.h>
-#include <LittleFS.h>
-
 #include <FS.h>
-#include <LittleFS.h>
+#include <SD.h>
 
 static WiFiMulti wifiMulti;
 static WebServer *http_server;
 static MDNSResponder *mdns_responder;
+
+void initSDCard() {
+
+    if  (!SD.begin(PIN_SD_CS, SPI, 25000000)) {
+        Serial.println("Card Mount Failed");
+        return;
+    }
+    uint8_t cardType = SD.cardType();
+
+    if(cardType == CARD_NONE) {
+        Serial.println("No SD card attached");
+        return;
+    }
+
+    Serial.print("SD Card Type: ");
+    if(cardType == CARD_MMC) {
+        Serial.println("MMC");
+    } else if(cardType == CARD_SD) {
+        Serial.println("SDSC");
+    } else if(cardType == CARD_SDHC) {
+        Serial.println("SDHC");
+    } else {
+        Serial.println("UNKNOWN");
+    }
+    uint64_t cardSize = SD.cardSize() / (1024 * 1024);
+    Serial.printf("SD Card Size: %lluMB\n", cardSize);
+}
 
 void webserver_loop(void) {
     if (http_server)
@@ -48,7 +73,7 @@ String getContentType(String filename) {
 
 bool exists(String path) {
     bool yes = false;
-    File file = LittleFS.open(path, "r");
+    File file = SD.open(path, "r");
     if(!file.isDirectory() && (file.size() > 0)) {
         yes = true;
     }
@@ -69,7 +94,7 @@ bool handleFileRead(String path) {
         if (exists(pathWithGz)) {
             path += ".gz";
         }
-        File file = LittleFS.open(path, "r");
+        File file = SD.open(path, "r");
         log_i("handleFileRead using '%s' size %u", path.c_str(), file.size());
 
         http_server->streamFile(file, contentType);
@@ -81,8 +106,9 @@ bool handleFileRead(String path) {
 
 void webserver_setup(void) {
 
-    log_i("mounting LittleFS");
-    LittleFS.begin(false,"/littlefs", 10);
+    log_i("mounting SD card");
+    initSDCard();
+
 
     log_i("Connecting to WiFi");
     WiFi.mode(WIFI_STA);
@@ -109,8 +135,7 @@ void webserver_setup(void) {
 
     http_server = new WebServer(HTTP_PORT);
     http_server->onNotFound([]() {
-        if (!handleFileRead( // String("/littlefs") +
-                    http_server->uri())) {
+        if (!handleFileRead(http_server->uri())) {
             http_server->send(404, "text/plain", "FileNotFound");
         }
     });
@@ -121,7 +146,7 @@ void webserver_setup(void) {
     if (mdns_responder->begin("broker")) {
         log_i("MDNS responder started");
     }
-    mdns_responder->addService("mqtt", "tcp", MQTT_TCP);
+    // mdns_responder->addService("mqtt", "tcp", MQTT_TCP);
     mdns_responder->addService("mqtt-ws", "tcp", MQTT_WS);
     mdns_responder->addService("http", "tcp", HTTP_PORT);
 }
