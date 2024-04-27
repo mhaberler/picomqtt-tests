@@ -11,6 +11,6 @@
   "license": "ISC",
   "dependencies": {
     "mdns": "^2.7.2",
-    "mqtt": "^5.5.0"
+    "mqtt": "^5.5.4"
   }
 }

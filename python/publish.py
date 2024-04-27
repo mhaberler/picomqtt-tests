@@ -14,7 +14,7 @@ class MQTTBrokerListener:
     def __init__(self):
         self.services = {}
         self.zeroconf = Zeroconf()
-        self.browser = ServiceBrowser(self.zeroconf, "_mqtt-ws._tcp.local.", self)
+        self.browser = ServiceBrowser(self.zeroconf, "_mqtt._tcp.local.", self)
 
     def update_service(self, zc: "zeroconf.Zeroconf", type_: str, name: str) -> None:
         pass
@@ -67,7 +67,8 @@ client_id = f"ps-{random.randint(0, 1000)}"
 
 client = mqtt.Client(
     mqtt.CallbackAPIVersion.VERSION2,
-    transport="websockets",
+    #transport="websockets",
+    transport="tcp",
     client_id=client_id,
     clean_session=True,
 )
