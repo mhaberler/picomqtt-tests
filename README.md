@@ -19,6 +19,7 @@ the following clients were successfully tested against PicoMQTT/PicoWebsockets:
 
 
 ### MQTT-over-TCP
+- OpenMQTT Gateway - development, commit f278555
 - node-red Node-RED version: v3.1.9
 - mymqtt.app Android 2.3.3 (7507)
 - mymqtt.app iOS 1.1.1 (3)
