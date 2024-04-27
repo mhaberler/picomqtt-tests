@@ -146,7 +146,7 @@ void webserver_setup(void) {
     if (mdns_responder->begin("broker")) {
         log_i("MDNS responder started");
     }
-    // mdns_responder->addService("mqtt", "tcp", MQTT_TCP);
+    mdns_responder->addService("mqtt", "tcp", MQTT_TCP);
     mdns_responder->addService("mqtt-ws", "tcp", MQTT_WS);
     mdns_responder->addService("http", "tcp", HTTP_PORT);
 }
