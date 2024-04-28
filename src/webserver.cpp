@@ -109,7 +109,6 @@ void webserver_setup(void) {
     log_i("mounting SD card");
     initSDCard();
 
-
     log_i("Connecting to WiFi");
     WiFi.mode(WIFI_STA);
     WiFi.enableProv(true);

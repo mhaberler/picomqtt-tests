@@ -1,14 +1,13 @@
 #include <PicoMQTT.h>
 #include <ArduinoJson.h>
 #include <Dps3xx.h>
-#include "i2cio.hpp"
-
+#include "timingpin.hpp"
 
 
 Dps3xx Dps3xxPressureSensor = Dps3xx();
 
 void onFifoFull() {
-    toggleTpin();
+    timingpin_toggle();
     // message for debugging
     // Serial.println("DPS3xx IRQ");
     Dps3xxPressureSensor.getIntStatusFifoFull();

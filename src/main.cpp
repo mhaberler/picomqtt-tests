@@ -3,24 +3,31 @@
 #include <PicoMQTT.h>
 #include <PicoWebsocket.h>
 #include <ESPmDNS.h>
+#include "tickers.hpp"
+#include "i2cio.hpp"
 
 #if __has_include("myconfig.h")
     #include "myconfig.h"
 #endif
-#define INTERVAL 3000
+
 
 void webserver_setup(void);
 void webserver_loop(void);
+void sensor_setup(void);
+void sensor_loop(void);
 
 ::WiFiServer mqtt_tcp_server(MQTT_TCP);
 ::WiFiServer mqtt_ws_server(MQTT_WS);
 PicoWebsocket::Server<::WiFiServer> websocket_server(mqtt_ws_server);
 PicoMQTT::Server mqtt(mqtt_tcp_server, websocket_server);
 
+TICKER(internal, INTERVAL);
+
 void setup() {
 
     delay(3000);
     M5.begin();
+    Wire.begin();
     Serial.begin(115200);
     Serial.setDebugOutput(true);
 
@@ -29,35 +36,40 @@ void setup() {
     log_i("Free PSRAM: %d bytes", ESP.getPsramSize());
     log_i("SDK version: %s", ESP.getSdkVersion());
 
+
     webserver_setup();
-
+    sensor_setup();
+    
     mqtt.begin();
-
-    mqtt.subscribe("#", [](const char * topic, const char * payload) {
-        Serial.printf("Received message in topic '%s': %s\n", topic, payload);
+    mqtt.subscribe("esp32/interval", [](const char * topic, const char * payload) {
+        uint32_t new_interval = strtoul (payload, NULL, 0);
+        if (new_interval  > MIN_INTERVAL) {
+            CHANGE_TICKER(internal, new_interval);
+            Serial.printf("changed ticker to %u ms\n", new_interval);
+        }
     });
-
-
+    RUNTICKER(internal);
 }
-uint32_t last;
+
 
 void loop() {
     mqtt.loop();
     webserver_loop();
-    // periodically publish CPU temperature
-    if (millis() - last > INTERVAL) {
+    sensor_loop();
+
+    if (TIME_FOR(internal)) {
         float t = temperatureRead();
-        String topic = "picomqtt/esp-cpu-temperature";
+        String topic = "esp32/esp-cpu-temperature";
         String message = String(t);
         mqtt.publish(topic, message);
+        mqtt.publish("esp32/interval", String(internal_update_ms));
         mqtt.loop();
 
         topic = "esp32/free-heap";
         message = String(esp_get_free_heap_size());
         mqtt.publish(topic, message);
 
-        last = millis();
+        DONE_WITH(internal);
     }
-
     yield();
 }

@@ -1,8 +1,8 @@
 
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h>
-#include "i2cio.hpp"
 #include <PicoMQTT.h>
 #include <ArduinoJson.h>
+#include "i2cio.hpp"
 
 #ifndef NAV_FREQUENCY
     #define NAV_FREQUENCY 1
@@ -17,7 +17,6 @@ bool ublox_present;
 
 static UBX_NAV_PVT_data_t ub_nav_pvt;
 uint32_t ublox_updated;
-void toggleTpin(void);
 
 const UBX_NAV_PVT_data_t &get_ublox_navdata(void) {
     return ub_nav_pvt;
@@ -74,52 +73,48 @@ ublox_nav_pvt (UBX_NAV_PVT_data_t *ub) {
 }
 
 void ublox_loop(void) {
-    if (ublox_present) {
+    // if (ublox_present) {
 
-        myGNSS.checkUblox();
-        myGNSS.checkCallbacks();
-    }
-    if (pps_irqs != prev_pps_irqs) {
-        Serial.printf("PPS %u\n",pps_irqs);
-        prev_pps_irqs = pps_irqs;
-    }
-    if (extint_irqs != prev_extint_irqs) {
-        Serial.printf("EXTINT %u\n",extint_irqs);
-        prev_extint_irqs = extint_irqs;
-    }
+    myGNSS.checkUblox();
+    myGNSS.checkCallbacks();
+    // }
+    // if (pps_irqs != prev_pps_irqs) {
+    //     Serial.printf("PPS %u\n",pps_irqs);
+    //     prev_pps_irqs = pps_irqs;
+    // }
+    // if (extint_irqs != prev_extint_irqs) {
+    //     Serial.printf("EXTINT %u\n",extint_irqs);
+    //     prev_extint_irqs = extint_irqs;
+    // }
 }
 
 
-void onPPS() {
-    // toggleTpin();
-    pps_irqs += 1;
-}
+// void onPPS() {
+//     // toggleTpin();
+//     pps_irqs += 1;
+// }
 
-void onINT() {
-    // toggleTpin();
+// void onINT() {
+//     // toggleTpin();
 
-    extint_irqs += 1;
-}
+//     extint_irqs += 1;
+// }
 
 void ublox_setup(void) {
-    ublox_present = i2cProbe(Wire, 0x42);
-    if (ublox_present) {
-        int16_t ppsIRQpin = 2;
-        pinMode(ppsIRQpin, INPUT);
-        attachInterrupt(digitalPinToInterrupt(ppsIRQpin), onPPS, RISING);
 
-        int16_t IRQpin = 7;
-        pinMode(IRQpin, INPUT);
-        attachInterrupt(digitalPinToInterrupt(IRQpin), onINT, RISING);
+    // int16_t ppsIRQpin = 2;
+    // pinMode(ppsIRQpin, INPUT);
+    // attachInterrupt(digitalPinToInterrupt(ppsIRQpin), onPPS, RISING);
 
-        myGNSS.begin(Wire, 0x42, 300, true);
-        // myGNSS.clearAntPIO();
-        // myGNSS.enableDebugging(Serial, trace_ublox);
-        myGNSS.setNavigationFrequency(NAV_FREQUENCY);
-        myGNSS.setAutoPVTcallbackPtr(&ublox_nav_pvt);
-        log_i("ublox initialized");
-    } else {
-        log_i("ublox gps not found");
-    }
+    // int16_t IRQpin = 7;
+    // pinMode(IRQpin, INPUT);
+    // attachInterrupt(digitalPinToInterrupt(IRQpin), onINT, RISING);
+
+    myGNSS.begin(Wire, 0x42, 300, true);
+    // myGNSS.clearAntPIO();
+    // myGNSS.enableDebugging(Serial, trace_ublox);
+    myGNSS.setNavigationFrequency(NAV_FREQUENCY);
+    myGNSS.setAutoPVTcallbackPtr(&ublox_nav_pvt);
+    log_i("ublox initialized");
 }
 
