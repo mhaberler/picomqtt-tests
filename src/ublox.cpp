@@ -2,6 +2,7 @@
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h>
 #include <PicoMQTT.h>
 #include <ArduinoJson.h>
+#include "RunningStats.hpp"
 #include "i2cio.hpp"
 
 #ifndef NAV_FREQUENCY
@@ -9,6 +10,7 @@
 #endif
 
 extern PicoMQTT::Server mqtt;
+extern RunningStats alt_stats, gps_stats;
 
 SFE_UBLOX_GNSS myGNSS;
 
@@ -38,6 +40,8 @@ ublox_nav_pvt (UBX_NAV_PVT_data_t *ub) {
     switch (ub_nav_pvt.fixType) {
         case 4:
         case 3:
+            gps_stats.Push(ub_nav_pvt.hMSL / 1000.0);
+
             json["hMSL"] = ub_nav_pvt.hMSL / 1000.0;
             json["hAE"] = ub_nav_pvt.height / 1000.0;
             json["velD"] = ub_nav_pvt.height / 1000.0;

@@ -84,7 +84,7 @@ static uint8_t temperature_oversampling = DPS__OVERSAMPLING_RATE_1;
 static uint8_t pressure_oversampling = DPS__MEASUREMENT_RATE_8;
 
 extern PicoMQTT::Server mqtt;
-RunningStats alt_stats;
+RunningStats alt_stats, gps_stats;
 
 bool dps368_setup(int i) {
     dps_sensors_t *d = &dps_sensors[i];
@@ -182,6 +182,12 @@ void sensor_loop(void) {
             json["mean"] = alt_stats.Mean();
             json["stddev"] = alt_stats.StandardDeviation();
             json["ci95"] = alt_stats.ConfidenceInterval(CI95);
+            
+            json["gps-mean"] = gps_stats.Mean();
+            json["gps-stddev"] = gps_stats.StandardDeviation();
+            json["gps-ci95"] = gps_stats.ConfidenceInterval(CI95);
+
+            
             auto publish = mqtt.begin_publish("altstats", measureJson(json));
             serializeJson(json, publish);
             publish.send();
