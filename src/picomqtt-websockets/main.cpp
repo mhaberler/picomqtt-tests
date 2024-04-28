@@ -12,10 +12,10 @@
 void webserver_setup(void);
 void webserver_loop(void);
 
-::WiFiServer tcp_server(MQTT_TCP);
-::WiFiServer server(MQTT_WS);
-PicoWebsocket::Server<::WiFiServer> websocket_server(server);
-PicoMQTT::Server mqtt(tcp_server, websocket_server);
+::WiFiServer mqtt_tcp_server(MQTT_TCP);
+::WiFiServer mqtt_ws_server(MQTT_WS);
+PicoWebsocket::Server<::WiFiServer> websocket_server(mqtt_ws_server);
+PicoMQTT::Server mqtt(mqtt_tcp_server, websocket_server);
 
 void setup() {
 
