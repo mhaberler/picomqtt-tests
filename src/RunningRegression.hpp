@@ -3,7 +3,7 @@
 
 // from: https://www.johndcook.com/blog/running_regression/
 
-#include "RunningStats.h"
+#include "RunningStats.hpp"
 
 class RunningRegression {
 public:

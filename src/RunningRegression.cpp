@@ -1,4 +1,4 @@
-#include "RunningRegression.h"
+#include "RunningRegression.hpp"
 
 RunningRegression::RunningRegression() { Clear(); }
 

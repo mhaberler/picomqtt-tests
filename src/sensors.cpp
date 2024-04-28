@@ -10,7 +10,7 @@
 #include "tickers.hpp"
 #include "ublox.hpp"
 #include "meteo.hpp"
-#include <Preferences.h>
+#include "RunningStats.hpp"
 
 #define TEMP_ALPHA 0.1
 #define PRS_ALPHA 0.8
@@ -74,6 +74,7 @@ dps_sensors_t dps_sensors[] = {
 TICKER(dps, I2C_INTERVAL);
 TICKER(gps, I2C_INTERVAL);
 TICKER(imu, I2C_INTERVAL);
+TICKER(stats, STATS_INTERVAL);
 
 static uint8_t ublox_addr, icm_addr; // zero if not present
 static uint8_t dps_count; // count of DPS3xx detected
@@ -83,6 +84,7 @@ static uint8_t temperature_oversampling = DPS__OVERSAMPLING_RATE_1;
 static uint8_t pressure_oversampling = DPS__MEASUREMENT_RATE_8;
 
 extern PicoMQTT::Server mqtt;
+RunningStats alt_stats;
 
 bool dps368_setup(int i) {
     dps_sensors_t *d = &dps_sensors[i];
@@ -121,7 +123,7 @@ void sensor_loop(void) {
             int16_t ret = d->sensor->getContResults(temperature, temperatureCount, pressure, pressureCount);
             unsigned long now = micros();
 
-            log_i("tcount %u pcount %u",  temperatureCount, pressureCount);
+            // log_i("tcount %u pcount %u",  temperatureCount, pressureCount);
 
             JsonDocument json;
             json["tick"] = micros();
@@ -149,6 +151,7 @@ void sensor_loop(void) {
                     for (auto i = 0; i < pressureCount; i++) {
                         d->prs_smoothed = d->prs_alpha * pressure[i] +
                                           (1.0 - d->prs_alpha) * d->prs_smoothed;
+                        alt_stats.Push(hPa2meters(pressure[i] / 100.0));
                     }
                 }
                 d->prs_cnt += pressureCount;
@@ -172,6 +175,17 @@ void sensor_loop(void) {
         if (TIME_FOR(imu)) {
 
             DONE_WITH(imu);
+        }
+        if (TIME_FOR(stats)) {
+            JsonDocument json;
+            json["tick"] = micros();
+            json["mean"] = alt_stats.Mean();
+            json["stddev"] = alt_stats.StandardDeviation();
+            json["ci95"] = alt_stats.ConfidenceInterval(CI95);
+            auto publish = mqtt.begin_publish("altstats", measureJson(json));
+            serializeJson(json, publish);
+            publish.send();
+            DONE_WITH(stats);
         }
     }
 }
@@ -197,4 +211,5 @@ void sensor_setup(void) {
     if (icm_addr) {
         RUNTICKER(imu);
     }
+    RUNTICKER(stats);
 }

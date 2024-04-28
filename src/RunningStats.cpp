@@ -1,4 +1,4 @@
-#include "RunningStats.h"
+#include "RunningStats.hpp"
 #include <math.h>
 
 // https://www.geeksforgeeks.org/confidence-interval/
@@ -48,10 +48,10 @@ double RunningStats::Kurtosis() const {
 }
 
 double RunningStats::ConfidenceInterval(ci_t ci) {
-  if (n < 300)
-    return NAN;
-  if (ci < CI90 || ci > CI99)
-    return NAN;
+  // if (n < 300)
+  //   return NAN;
+  // if (ci < CI90 || ci > CI99)
+  //   return NAN;
   return z_values[ci] * StandardDeviation() / sqrt((double)n);
 }
 
