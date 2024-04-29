@@ -11,47 +11,40 @@
 <body>
     <h1>MQTT Example</h1>
     <script type="text/javascript">
-        const client = mqtt.connect("ws://" + location.host + ":81",
-            { keepalive: 30 });
+        const clientId = 'mqttjs_' + Math.random().toString(16).substr(2, 8)
 
-        // Set callback handlers
-        client.onConnectionLost = onConnectionLost;
-        client.onMessageArrived = onMessageArrived;
-
-        // Connect the client
-        client.connect({
-            onSuccess: onConnect,
-            onFailure: onFailure,
-            useSSL: false // Change to true if your broker uses SSL
-        });
-
-        // Called when the client connects
-        function onConnect() {
-            console.log("Connected");
-            // Subscribe to a topic
-            client.subscribe("#");
+        //        const host = 'ws://' + location.host + ':81';
+        const host = 'ws://172.16.0.207:81';
+        const options = {
+            keepalive: 60,
+            clientId: clientId,
+            protocolId: 'MQTT',
+            protocolVersion: 4,
+            clean: true,
+            reconnectPeriod: 1000,
+            connectTimeout: 30 * 1000,
         }
-
-        // Called when the client loses its connection
-        function onConnectionLost(responseObject) {
-            if (responseObject.errorCode !== 0) {
-                console.log("Connection lost:", responseObject.errorMessage);
-            }
-        }
-
-        // Called when a message arrives
-        function onMessageArrived(message) {
-            console.log("Message arrived:", message.payloadString);
-        }
-
-        // Called when the connection fails
-        function onFailure(errorMessage) {
-            console.log("Connection failed:", errorMessage.errorMessage);
-        }
+        console.log('Connecting mqtt client');
+        const client = mqtt.connect(host, options)
+        client.on('error', (err) => {
+            console.log('Connection error: ', err)
+            client.end()
+        })
+        client.on('reconnect', () => {
+            console.log('Reconnecting...')
+        })
+        client.on('connect', () => {
+            console.log(`Client connected: ${clientId}`)
+            client.subscribe('#', { qos: 0 })
+        })
+        client.on('message', (topic, message, packet) => {
+            console.log(`Received Message: ${message.toString()} On topic: ${topic}`)
+        })
 
         // Publish a message
         function publishMessage() {
             client.publish('blah', 'Hello, MQTT.js here!')
+            console.log(`publishMessage`);
         }
     </script>
     <button onclick="publishMessage()">Publish Message</button>
