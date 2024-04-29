@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "sensors.hpp"
 #include "i2cio.hpp"
+#include "scanner.hpp"
 
 #include <ICM_20948.h>
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h>
@@ -16,17 +17,19 @@
 #include "meteo.hpp"
 
 TICKER(baro, BARO_INTERVAL);
-TICKER(gps, BARO_INTERVAL);
+TICKER(gps, GPS_INTERVAL);
 TICKER(imu, IMU_INTERVAL);
 TICKER(stats, STATS_INTERVAL);
 
 void sensor_loop(void) {
     if (TIME_FOR(baro)) {
         baro_loop();
+
         DONE_WITH(baro);
     }
     if (TIME_FOR(gps)) {
         ublox_loop();
+        process_ble();
         DONE_WITH(gps);
     }
     if (TIME_FOR(imu)) {
@@ -40,6 +43,7 @@ void sensor_loop(void) {
 }
 
 void sensor_setup(void) {
+    setup_ble();
     if (baro_setup()) {
         RUNTICKER(baro);
     }
