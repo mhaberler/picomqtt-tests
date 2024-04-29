@@ -6,8 +6,9 @@
 #include "i2cio.hpp"
 #include "stats.hpp"
 #include "ublox.hpp"
+#include "protomap.hpp"
+#include "broker.hpp"
 
-extern PicoMQTT::Server mqtt;
 
 SFE_UBLOX_GNSS myGNSS;
 

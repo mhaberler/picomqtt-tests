@@ -39,7 +39,7 @@ using namespace pmtiles;
     #define MIN_ALLOC_SIZE 8192
 #endif
 
-typedef mqtt::buffer_ref<char> buffer_ref;
+typedef external::buffer_ref<char> buffer_ref;
 
 static inline size_t next_power_of_2(size_t s) {
     s--;
