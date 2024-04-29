@@ -25,14 +25,14 @@ pmErrno_t decompress_gzip(const string_view str, buffer_ref &out) {
         decomp_buffer = (char *)realloc(decomp_buffer, decomp_size);
 #endif
         if (decomp_buffer == nullptr) {
-            log_e("realloc %zu -> %zu failed:  %s", str.size(), decomp_size, strerror(errno));
+            log_e("realloc %u -> %u failed:  %s", str.size(), decomp_size, strerror(errno));
             pmerrno = PM_DECOMP_BUF_ALLOC_FAILED;
             if (decomp_buffer)
                 free(decomp_buffer);
             decomp_size = 0;
             return PM_DECOMP_BUF_ALLOC_FAILED;
         }
-        log_d("%s initial alloc %zu", __FUNCTION__, decomp_size);
+        log_d("%s initial alloc %u", __FUNCTION__, decomp_size);
     }
 
     z_stream zs = {};
@@ -55,7 +55,7 @@ pmErrno_t decompress_gzip(const string_view str, buffer_ref &out) {
 
         if (decomp_size <= zs.total_out) {
             decomp_size = alloc_size(zs.total_out*2);
-            log_d("%s grow -> %zu", __FUNCTION__, decomp_size);
+            log_d("%s grow -> %u", __FUNCTION__, decomp_size);
 #ifdef ESP32
             decomp_buffer = (char *)heap_caps_realloc(decomp_buffer, decomp_size, MALLOC_CAP_SPIRAM);
 #else

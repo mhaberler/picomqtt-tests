@@ -60,12 +60,12 @@ pmErrno_t get_bytes(FILE *fp,
         io_buffer = (char *)realloc(io_buffer, io_size);
 #endif
         if (io_buffer == nullptr) {
-            log_e("realloc %zu failed:  %s", length, strerror(errno));
+            log_e("realloc %u failed:  %s", length, strerror(errno));
             pmerrno = PM_IOBUF_ALLOC_FAILED;
             io_size = 0;
             return PM_IOBUF_ALLOC_FAILED;
         }
-        log_d("%s iniial alloc %zu", __FUNCTION__, io_size);
+        log_d("%s iniial alloc %u", __FUNCTION__, io_size);
     }
 
     off_t ofst = fseek(fp, start, SEEK_SET);
@@ -75,7 +75,7 @@ pmErrno_t get_bytes(FILE *fp,
     }
     size_t got = fread(io_buffer, 1, length, fp);
     if (got != length) {
-        log_e("read failed: got %zu of %zu, %s", got, length, strerror(errno));
+        log_e("read failed: got %u of %u, %s", got, length, strerror(errno));
         return PM_READ_FAILED;
     }
     result = buffer_ref(io_buffer, length);

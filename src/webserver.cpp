@@ -8,7 +8,7 @@ static WiFiMulti wifiMulti;
 static WebServer *http_server;
 static MDNSResponder *mdns_responder;
 
-void initSDCard() {
+void initSDCard(void) {
 
     if  (!SD.begin(PIN_SD_CS, SPI, 25000000)) {
         Serial.println("Card Mount Failed");
@@ -106,8 +106,7 @@ bool handleFileRead(String path) {
 
 void webserver_setup(void) {
 
-    log_i("mounting SD card");
-    initSDCard();
+
 
     log_i("Connecting to WiFi");
     WiFi.mode(WIFI_STA);

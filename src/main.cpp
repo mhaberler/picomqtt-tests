@@ -5,6 +5,7 @@
 #include <ESPmDNS.h>
 #include "tickers.hpp"
 #include "i2cio.hpp"
+#include "demlookup.hpp"
 
 #if __has_include("myconfig.h")
     #include "myconfig.h"
@@ -15,6 +16,7 @@ void webserver_setup(void);
 void webserver_loop(void);
 void sensor_setup(void);
 void sensor_loop(void);
+void initSDCard(void);
 
 ::WiFiServer mqtt_tcp_server(MQTT_TCP);
 ::WiFiServer mqtt_ws_server(MQTT_WS);
@@ -38,6 +40,11 @@ void setup() {
 
     Wire.begin();
     i2c_scan(Wire);
+
+    log_i("mounting SD card");
+    initSDCard();
+    
+    dem_setup();
 
     webserver_setup();
     sensor_setup();

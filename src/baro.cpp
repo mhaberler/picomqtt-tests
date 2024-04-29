@@ -82,7 +82,7 @@ void baro_loop(void) {
         int16_t ret = d->sensor->getContResults(temperature, temperatureCount, pressure, pressureCount);
         unsigned long now = micros();
 
-        log_d("tcount %u pcount %u",  temperatureCount, pressureCount);
+        // log_d("tcount %u pcount %u",  temperatureCount, pressureCount);
 
         JsonDocument json;
         json["tick"] = micros();
