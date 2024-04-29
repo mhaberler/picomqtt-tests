@@ -12,7 +12,7 @@
 
 dps_sensors_t dps_sensors[] = {
     {
-        0, 0, NULL, false, &Wire, 0x77, "dps368-1",
+        0, 0, NULL, false, &Wire, 0x77, "dps368-0",
         TEMP_MR,
         TEMP_OSR,
         PRS_MR,
@@ -22,7 +22,7 @@ dps_sensors_t dps_sensors[] = {
         PRS_ALPHA
     },
     {
-        0, 0,  NULL, false, &Wire, 0x76, "dps368-2",
+        0, 0,  NULL, false, &Wire, 0x76, "dps368-1",
         TEMP_MR,
         TEMP_OSR,
         PRS_MR,
@@ -32,7 +32,7 @@ dps_sensors_t dps_sensors[] = {
         PRS_ALPHA
     },
     {
-        0, 0,  NULL, false, &Wire1, 0x77, "dps368-3",
+        0, 0,  NULL, false, &Wire1, 0x77, "dps368-2",
         TEMP_MR,
         TEMP_OSR,
         PRS_MR,
@@ -42,12 +42,6 @@ dps_sensors_t dps_sensors[] = {
         PRS_ALPHA
     }
 };
-
-
-
-static uint8_t temperature_initial_oversampling = DPS__OVERSAMPLING_RATE_128;
-static uint8_t temperature_oversampling = DPS__OVERSAMPLING_RATE_1;
-static uint8_t pressure_oversampling = DPS__MEASUREMENT_RATE_8;
 
 bool dps368_setup(int i) {
     dps_sensors_t *d = &dps_sensors[i];
@@ -105,7 +99,11 @@ void baro_loop(void) {
                 }
             }
             d->temp_cnt += temperatureCount;
+#ifdef REPORT_BARO_TEMPERATURE
             json["temp"] = d->temp_smoothed;
+#else
+            temperatureCount = 0;
+#endif
         }
         if (pressureCount) {
             if (d->prs_cnt == 0) { // first reading
@@ -120,9 +118,11 @@ void baro_loop(void) {
                 }
             }
             d->prs_cnt += pressureCount;
-            float hPa =  d->prs_smoothed  / 100.0;
+            float hPa = d->prs_smoothed  / 100.0;
             json["hPa"] = hPa;
             json["alt"] = hPa2meters(hPa);
+            json["last-alt"] = hPa2meters(pressure[pressureCount-1] / 100.0);
+            json["last-hPa"] = pressure[pressureCount-1] / 100.0; // last raw sample
         }
         if (pressureCount || temperatureCount) {
             auto publish = mqtt.begin_publish(d->topic, measureJson(json));

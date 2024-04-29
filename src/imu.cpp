@@ -10,7 +10,12 @@
 
 #undef CALIBRATED_COMPASS // broken
 
+static double hdg_corr = 0.0;
 static ICM_20948_I2C icm;
+
+void set_hdg_corr(double c) {
+    hdg_corr = c;
+}
 
 bool imu_setup( void) {
     if (detect(Wire, ICM_20948_I2C_ADDR_AD1)) {
@@ -56,8 +61,9 @@ void imu_loop( void) {
             double w = sqrt(1.0 - ((x * x) + (y * y) + (z * z)));
             if (!isnan(w)) {
                 double hdg = atan2(2*x*y + 2*z*w, 1 - 2*y*y - 2*z*z)*(180.0/PI);
+                hdg += hdg_corr;
                 if(hdg < 0) hdg = 360 + hdg;
-                hdg = round(360 - hdg);
+                int deg = lround(360 - hdg);
 
                 JsonDocument json;
                 json["us"] = now;
@@ -65,11 +71,11 @@ void imu_loop( void) {
                 json["x"] = x;
                 json["y"] = y;
                 json["z"] = z;
-                json["hdg"] = hdg;
 
                 auto publish = mqtt.begin_publish("quat", measureJson(json));
                 serializeJson(json, publish);
                 publish.send();
+                mqtt.publish("hdg", String(deg));
             }
         }
 #ifdef CALIBRATED_COMPASS

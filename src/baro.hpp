@@ -3,10 +3,10 @@
 #include <Dps3xx.h>
 #include "RunningStats.hpp"
 #define TEMP_ALPHA 0.1
-#define PRS_ALPHA 0.8
+#define PRS_ALPHA 0.3
 #define TEMP_MR   DPS__MEASUREMENT_RATE_1
 #define TEMP_OSR  DPS__OVERSAMPLING_RATE_128
-#define PRS_MR    DPS__MEASUREMENT_RATE_2
+#define PRS_MR    DPS__MEASUREMENT_RATE_1
 #define PRS_OSR   DPS__OVERSAMPLING_RATE_1
 
 
