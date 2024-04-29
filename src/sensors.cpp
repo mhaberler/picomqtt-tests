@@ -15,9 +15,9 @@
 #include "RunningStats.hpp"
 #include "meteo.hpp"
 
-TICKER(baro, I2C_INTERVAL);
-TICKER(gps, I2C_INTERVAL);
-TICKER(imu, I2C_INTERVAL);
+TICKER(baro, BARO_INTERVAL);
+TICKER(gps, BARO_INTERVAL);
+TICKER(imu, IMU_INTERVAL);
 TICKER(stats, STATS_INTERVAL);
 
 void sensor_loop(void) {
