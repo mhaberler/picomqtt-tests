@@ -6,7 +6,7 @@
 #include "mopeka.h"
 #include "tpms.h"
 #include "otodata.h"
-#include "hexdump.h"
+#include "hexdump.hpp"
 #include "ringbuffer.hpp"
 #include "broker.hpp"
 #include "util.hpp"
@@ -197,7 +197,7 @@ bool bleDeliver(const bleAdvMsgHdr_t *msg, size_t size) {
     if (strlen((char *)msg->name)) {
         log_i("name: '%s'", msg->name);
     }
-    // hexdump(Serial, data, len);
+    
     switch (msg->mfid) {
         case 0x0499: { // Ruuvi manufacturer ID
                 ruuviAd_t ruuvi_report = {};
@@ -213,6 +213,7 @@ bool bleDeliver(const bleAdvMsgHdr_t *msg, size_t size) {
                     return false;
                 }
                 log_e("failed to decode ruuvi msg");
+                hexdump(Serial, (uint8_t *)data, len);
                 return false;
             }
         case 0x0059: { // Mopeka manufacturer ID
