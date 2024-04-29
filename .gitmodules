@@ -10,3 +10,6 @@
 [submodule "quaternion_sensor_3d_nodejs"]
 	path = quaternion_sensor_3d_nodejs
 	url = https://github.com/mhaberler/quaternion_sensor_3d_nodejs.git
+[submodule "lib/SparkFun_ICM-20948_ArduinoLibrary"]
+	path = lib/SparkFun_ICM-20948_ArduinoLibrary
+	url = https://github.com/mhaberler/SparkFun_ICM-20948_ArduinoLibrary.git
