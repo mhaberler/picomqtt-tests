@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include <string>
 #include <string_view>
 #ifdef ESP32
@@ -5,7 +6,6 @@
 #endif
 
 #include "protomap.hpp"
-#include "logging.hpp"
 #include "zlib.h"
 
 #define GUESS 2
@@ -25,21 +25,21 @@ pmErrno_t decompress_gzip(const string_view str, buffer_ref &out) {
         decomp_buffer = (char *)realloc(decomp_buffer, decomp_size);
 #endif
         if (decomp_buffer == nullptr) {
-            LOG_ERROR("realloc %zu -> %zu failed:  %s", str.size(), decomp_size, strerror(errno));
+            log_e("realloc %zu -> %zu failed:  %s", str.size(), decomp_size, strerror(errno));
             pmerrno = PM_DECOMP_BUF_ALLOC_FAILED;
             if (decomp_buffer)
                 free(decomp_buffer);
             decomp_size = 0;
             return PM_DECOMP_BUF_ALLOC_FAILED;
         }
-        LOG_DEBUG("%s initial alloc %zu", __FUNCTION__, decomp_size);
+        log_d("%s initial alloc %zu", __FUNCTION__, decomp_size);
     }
 
     z_stream zs = {};
     int32_t rc = inflateInit2(&zs, MOD_GZIP_ZLIB_WINDOWSIZE + 16);
 
     if (rc != Z_OK) {
-        LOG_ERROR("inflateInit failed");
+        log_e("inflateInit failed");
         return PM_DEFLATE_INIT_FAILED;
     }
 
@@ -55,7 +55,7 @@ pmErrno_t decompress_gzip(const string_view str, buffer_ref &out) {
 
         if (decomp_size <= zs.total_out) {
             decomp_size = alloc_size(zs.total_out*2);
-            LOG_DEBUG("%s grow -> %zu", __FUNCTION__, decomp_size);
+            log_d("%s grow -> %zu", __FUNCTION__, decomp_size);
 #ifdef ESP32
             decomp_buffer = (char *)heap_caps_realloc(decomp_buffer, decomp_size, MALLOC_CAP_SPIRAM);
 #else
@@ -68,7 +68,7 @@ pmErrno_t decompress_gzip(const string_view str, buffer_ref &out) {
     inflateEnd(&zs);
 
     if (rc != Z_STREAM_END) {
-        LOG_ERROR("%s: zlib decompression failed : %ld", __FUNCTION__, rc);
+        log_e("%s: zlib decompression failed : %ld", __FUNCTION__, rc);
         return PM_ZLIB_DECOMP_FAILED;
     }
     out = buffer_ref(decomp_buffer, zs.total_out);

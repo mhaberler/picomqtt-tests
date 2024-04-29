@@ -25,8 +25,6 @@
 #include "webp/encode.h"
 #include "webp/types.h"
 
-#include "logging.hpp"
-
 #include "protomap.hpp"
 #include "slippytiles.hpp"
 
@@ -62,22 +60,22 @@ pmErrno_t get_bytes(FILE *fp,
         io_buffer = (char *)realloc(io_buffer, io_size);
 #endif
         if (io_buffer == nullptr) {
-            LOG_ERROR("realloc %zu failed:  %s", length, strerror(errno));
+            log_e("realloc %zu failed:  %s", length, strerror(errno));
             pmerrno = PM_IOBUF_ALLOC_FAILED;
             io_size = 0;
             return PM_IOBUF_ALLOC_FAILED;
         }
-        LOG_DEBUG("%s iniial alloc %zu", __FUNCTION__, io_size);
+        log_d("%s iniial alloc %zu", __FUNCTION__, io_size);
     }
 
     off_t ofst = fseek(fp, start, SEEK_SET);
     if (ofst != 0 ) {
-        LOG_ERROR("fseek to %ld failed:  %s", start, strerror(errno));
+        log_e("fseek to %ld failed:  %s", start, strerror(errno));
         return PM_SEEK_FAILED;;
     }
     size_t got = fread(io_buffer, 1, length, fp);
     if (got != length) {
-        LOG_ERROR("read failed: got %zu of %zu, %s", got, length, strerror(errno));
+        log_e("read failed: got %zu of %zu, %s", got, length, strerror(errno));
         return PM_READ_FAILED;
     }
     result = buffer_ref(io_buffer, length);
@@ -93,7 +91,7 @@ int addDEM(const char *path, demInfo_t **demInfo) {
         perror(path);
         return -1;
     }
-    LOG_DEBUG("open '%s' size %ld : %s", path, st.st_size, strerror(errno));
+    log_d("open '%s' size %ld : %s", path, st.st_size, strerror(errno));
 
     demInfo_t *di = new demInfo_t();
     di->fp = fopen(path, "rb");
@@ -109,7 +107,7 @@ int addDEM(const char *path, demInfo_t **demInfo) {
 
     di->header = deserialize_header(string_view(io.to_string()), pmerr);
     if (pmerr != PMAP_OK) {
-        LOG_ERROR("deserialize_header failed: %d", pmerr);
+        log_e("deserialize_header failed: %d", pmerr);
         delete di;
         return -1;
     }
@@ -138,13 +136,13 @@ string keyStr(uint64_t key) {
 
 void printCache(void) {
     for (auto item: tile_cache.items()) {
-        LOG_INFO("%s", keyStr(item.first).c_str());
+        log_i("%s", keyStr(item.first).c_str());
     }
 }
 
 void printDems(void) {
     for (auto d: dems) {
-        LOG_INFO("dem %u: %s coverage %.2f/%.2f..%.2f/%.2f tile_decode_err=%lu protomap_err=%lu hits=%lu misses=%lu tilesize=%u type %s",
+        log_i("dem %u: %s coverage %.2f/%.2f..%.2f/%.2f tile_decode_err=%lu protomap_err=%lu hits=%lu misses=%lu tilesize=%u type %s",
                  d->index, d->path,
                  min_lat(d), min_lon(d),
                  max_lat(d), max_lon(d),
@@ -164,7 +162,7 @@ static void freeTile(tile_t *tile) {
 }
 
 static void evictTile(uint64_t key, tile_t *t) {
-    LOG_DEBUG("evict %s", keyStr(key).c_str());
+    log_d("evict %s", keyStr(key).c_str());
     if (t != NULL) {
         freeTile(t);
     }
@@ -203,7 +201,7 @@ bool lookupTile(demInfo_t &di, locInfo_t *locinfo, double lat, double lon) {
     key.entry.z = di.header.max_zoom;
 
     if (!tile_cache.exists(key.key)) {
-        LOG_DEBUG("cache entry %s not found", keyStr(key.key).c_str());
+        log_d("cache entry %s not found", keyStr(key.key).c_str());
         di.cache_misses++;
 
         TIMESTAMP(query);
@@ -211,7 +209,7 @@ bool lookupTile(demInfo_t &di, locInfo_t *locinfo, double lat, double lon) {
 
         uint64_t tile_id = zxy_to_tileid(di.header.max_zoom, tile_x, tile_y, pmerr);
         if (pmerr != PMAP_OK) {
-            LOG_ERROR("zxy_to_tileid failed: %d", pmerr);
+            log_e("zxy_to_tileid failed: %d", pmerr);
             locinfo->status = LS_PM_XYZ2TID_FAILED;
             di.protomap_errors++;
             return false;
@@ -277,7 +275,7 @@ bool lookupTile(demInfo_t &di, locInfo_t *locinfo, double lat, double lon) {
                         pngle_set_draw_callback(pngle, pngle_draw_cb);
                         int fed = pngle_feed(pngle, blob, blob_size);
                         if (fed != blob_size) {
-                            LOG_ERROR("%s: decode failed: decoded %d out of %u: %s",
+                            log_e("%s: decode failed: decoded %d out of %u: %s",
                                       keyStr(key.key).c_str(), fed, blob_size, pngle_error(pngle));
                             freeTile(tile);
                             tile = NULL;
@@ -287,7 +285,7 @@ bool lookupTile(demInfo_t &di, locInfo_t *locinfo, double lat, double lon) {
                             pngle_ihdr_t *hdr = pngle_get_ihdr(pngle);
                             if (hdr->compression) {
                                 locinfo->status = LS_PNG_COMPRESSED;
-                                LOG_ERROR("%s: compressed PNG tile",
+                                log_e("%s: compressed PNG tile",
                                           keyStr(key.key).c_str());
                             } else {
                                 di.tile_size = pngle_get_width(pngle);
@@ -313,18 +311,18 @@ bool lookupTile(demInfo_t &di, locInfo_t *locinfo, double lat, double lon) {
                         WebPInitDecoderConfig(&config);
                         rc = WebPGetInfo(blob, blob_size, &width, &height);
                         if (!rc) {
-                            LOG_ERROR("%s: WebPGetInfo failed rc=%d", keyStr(key.key).c_str(), rc);
+                            log_e("%s: WebPGetInfo failed rc=%d", keyStr(key.key).c_str(), rc);
                             locinfo->status = LS_WEBP_DECODE_ERROR;
                             break;
                         }
                         sc = WebPGetFeatures(blob, blob_size, &config.input);
                         if (sc != VP8_STATUS_OK) {
-                            LOG_ERROR("%s: WebPGetFeatures failed sc=%d", keyStr(key.key).c_str(), sc);
+                            log_e("%s: WebPGetFeatures failed sc=%d", keyStr(key.key).c_str(), sc);
                             locinfo->status = LS_WEBP_DECODE_ERROR;
                             break;
                         }
                         if (config.input.format != 2) {
-                            LOG_ERROR("%s: lossy WEBP compression", keyStr(key.key).c_str());
+                            log_e("%s: lossy WEBP compression", keyStr(key.key).c_str());
                             locinfo->status = LS_WEBP_COMPRESSED;
                             break;
                         }
@@ -336,7 +334,7 @@ bool lookupTile(demInfo_t &di, locInfo_t *locinfo, double lat, double lon) {
                             tile->width = config.input.width;
                             if (WebPDecodeRGBInto(blob, blob_size,
                                                   buffer, bufsize, width * 3) == NULL) {
-                                LOG_ERROR("%s: WebPDecode failed", keyStr(key.key).c_str());
+                                log_e("%s: WebPDecode failed", keyStr(key.key).c_str());
                                 freeTile(tile);
                                 tile = NULL;
                                 di.tile_decode_errors++;
@@ -357,7 +355,7 @@ bool lookupTile(demInfo_t &di, locInfo_t *locinfo, double lat, double lon) {
             }
         }
     } else {
-        LOG_DEBUG("cache entry %s found: ", keyStr(key.key).c_str());
+        log_d("cache entry %s found: ", keyStr(key.key).c_str());
         tile = tile_cache.get(key.key);
         locinfo->status = LS_VALID;
         di.cache_hits++;
@@ -375,7 +373,7 @@ bool lookupTile(demInfo_t &di, locInfo_t *locinfo, double lat, double lon) {
 int getLocInfo(double lat, double lon, locInfo_t *locinfo) {
     for (auto di: dems) {
         if (demContains(di, lat, lon)) {
-            LOG_DEBUG("%.2f %.2f contained in %s", lat, lon, di->path);
+            log_d("%.2f %.2f contained in %s", lat, lon, di->path);
             if (lookupTile(*di, locinfo, lat, lon)) {
                 return 0;
             }
