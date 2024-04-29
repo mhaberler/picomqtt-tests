@@ -1,5 +1,5 @@
 #pragma once
-#include <cmath>
+#include <math.h>
 
 #define SEALEVELPRESSURE_HPA (1013.25)
 

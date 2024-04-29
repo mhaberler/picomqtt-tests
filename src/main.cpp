@@ -27,7 +27,7 @@ void setup() {
 
     delay(3000);
     M5.begin();
-    Wire.begin();
+
     Serial.begin(115200);
     Serial.setDebugOutput(true);
 
@@ -36,10 +36,12 @@ void setup() {
     log_i("Free PSRAM: %d bytes", ESP.getPsramSize());
     log_i("SDK version: %s", ESP.getSdkVersion());
 
+    Wire.begin();
+    i2c_scan(Wire);
 
     webserver_setup();
     sensor_setup();
-    
+
     mqtt.begin();
     mqtt.subscribe("esp32/interval", [](const char * topic, const char * payload) {
         uint32_t new_interval = strtoul (payload, NULL, 0);
@@ -66,7 +68,7 @@ void loop() {
         mqtt.loop();
 
         topic = "esp32/free-heap";
-        message = String(esp_get_free_heap_size());
+        message = String(ESP.getFreeHeap());
         mqtt.publish(topic, message);
 
         DONE_WITH(internal);

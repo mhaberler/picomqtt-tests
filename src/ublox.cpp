@@ -1,16 +1,13 @@
-
+#include <Arduino.h>
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h>
 #include <PicoMQTT.h>
 #include <ArduinoJson.h>
 #include "RunningStats.hpp"
 #include "i2cio.hpp"
-
-#ifndef NAV_FREQUENCY
-    #define NAV_FREQUENCY 1
-#endif
+#include "stats.hpp"
+#include "ublox.hpp"
 
 extern PicoMQTT::Server mqtt;
-extern RunningStats alt_stats, gps_stats;
 
 SFE_UBLOX_GNSS myGNSS;
 
@@ -104,7 +101,7 @@ void ublox_loop(void) {
 //     extint_irqs += 1;
 // }
 
-void ublox_setup(void) {
+bool ublox_setup(void) {
 
     // int16_t ppsIRQpin = 2;
     // pinMode(ppsIRQpin, INPUT);
@@ -114,11 +111,16 @@ void ublox_setup(void) {
     // pinMode(IRQpin, INPUT);
     // attachInterrupt(digitalPinToInterrupt(IRQpin), onINT, RISING);
 
-    myGNSS.begin(Wire, 0x42, 300, true);
-    // myGNSS.clearAntPIO();
-    // myGNSS.enableDebugging(Serial, trace_ublox);
-    myGNSS.setNavigationFrequency(NAV_FREQUENCY);
-    myGNSS.setAutoPVTcallbackPtr(&ublox_nav_pvt);
-    log_i("ublox initialized");
+    if (detect(Wire, 0x42)) {
+
+        myGNSS.begin(Wire, 0x42, 300, true);
+        // myGNSS.clearAntPIO();
+        // myGNSS.enableDebugging(Serial, trace_ublox);
+        myGNSS.setNavigationFrequency(NAV_FREQUENCY);
+        myGNSS.setAutoPVTcallbackPtr(&ublox_nav_pvt);
+        log_i("ublox initialized");
+        return true;
+    }
+    return false;
 }
 

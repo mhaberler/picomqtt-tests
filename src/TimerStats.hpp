@@ -1,7 +1,7 @@
 #ifndef TIMERSTATS_H
 #define TIMERSTATS_H
 
-#include "RunningStats.h"
+#include "RunningStats.hpp"
 #include "esp_timer.h"
 
 static inline double fmillis(void) {
