@@ -355,7 +355,7 @@ bool lookupTile(demInfo_t &di, locInfo_t *locinfo, double lat, double lon) {
             }
         }
     } else {
-        log_d("cache entry %s found: ", keyStr(key.key).c_str());
+        // log_d("cache entry %s found: ", keyStr(key.key).c_str());
         tile = tile_cache.get(key.key);
         locinfo->status = LS_VALID;
         di.cache_hits++;
@@ -373,7 +373,7 @@ bool lookupTile(demInfo_t &di, locInfo_t *locinfo, double lat, double lon) {
 int getLocInfo(double lat, double lon, locInfo_t *locinfo) {
     for (auto di: dems) {
         if (demContains(di, lat, lon)) {
-            log_d("%.2f %.2f contained in %s", lat, lon, di->path);
+            // log_d("%.2f %.2f contained in %s", lat, lon, di->path);
             if (lookupTile(*di, locinfo, lat, lon)) {
                 return 0;
             }

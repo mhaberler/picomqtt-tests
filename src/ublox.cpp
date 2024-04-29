@@ -35,11 +35,14 @@ ublox_nav_pvt (UBX_NAV_PVT_data_t *ub) {
     json["us"] = micros();
     json["fixType"] =ub_nav_pvt.fixType;
 
+
+
     switch (ub_nav_pvt.fixType) {
         case 4:
         case 3:
+#ifdef STATS
             gps_stats.Push(ub_nav_pvt.hMSL / 1000.0);
-
+#endif
             json["hMSL"] = ub_nav_pvt.hMSL / 1000.0;
             json["hAE"] = ub_nav_pvt.height / 1000.0;
             json["velD"] = ub_nav_pvt.height / 1000.0;
@@ -49,9 +52,19 @@ ublox_nav_pvt (UBX_NAV_PVT_data_t *ub) {
             json["vAcc"] = ub_nav_pvt.vAcc * 0.01;
             json["pDOP"] = ub_nav_pvt.pDOP * 0.01;
             __attribute__ ((fallthrough));
-        case 2:
-            json["lat"] = ub_nav_pvt.lat * 1e-7;
-            json["lon"] = ub_nav_pvt.lon * 1e-7;
+        case 2: {
+                double lat = ub_nav_pvt.lat * 1e-7;
+                double lon = ub_nav_pvt.lon * 1e-7;
+                json["lat"] = lat;
+                json["lon"] = lon;
+
+                locInfo_t li = {};
+                double ele;
+                int rc = getLocInfo(lat, lon, &li);
+                if (li.status == LS_VALID) {
+                    json["ele"] = li.elevation;
+                }
+            }
             __attribute__ ((fallthrough));
         default:
             json["numSV"] = ub_nav_pvt.numSV;

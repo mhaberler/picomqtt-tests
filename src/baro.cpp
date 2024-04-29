@@ -114,7 +114,9 @@ void baro_loop(void) {
                 for (auto i = 0; i < pressureCount; i++) {
                     d->prs_smoothed = d->prs_alpha * pressure[i] +
                                       (1.0 - d->prs_alpha) * d->prs_smoothed;
+#ifdef STATS
                     alt_stats.Push(hPa2meters(pressure[i] / 100.0));
+#endif
                 }
             }
             d->prs_cnt += pressureCount;

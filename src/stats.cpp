@@ -4,9 +4,12 @@
 #include "stats.hpp"
 #include "broker.hpp"
 
-RunningStats gps_stats, alt_stats;
+#ifdef STATS
+    RunningStats gps_stats, alt_stats;
+#endif
 
 void stats_loop(void) {
+#ifdef STATS
     JsonDocument json;
     json["tick"] = micros();
     json["mean"] = alt_stats.Mean();
@@ -21,9 +24,9 @@ void stats_loop(void) {
     auto publish = mqtt.begin_publish("altstats", measureJson(json));
     serializeJson(json, publish);
     publish.send();
-
+#endif
 }
 
 void stats_setup(void) {
-    
+
 }

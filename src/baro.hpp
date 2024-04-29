@@ -28,7 +28,9 @@ typedef struct  {
 
 extern dps_sensors_t dps_sensors[];
 extern uint8_t dps_count; 
+#ifdef STATS
 extern RunningStats alt_stats;
+#endif
 
 void baro_loop(void);
 uint8_t baro_setup(void);
