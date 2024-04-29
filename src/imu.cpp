@@ -13,11 +13,18 @@ bool imu_setup( void) {
     if (detect(Wire, ICM_20948_I2C_ADDR_AD1)) {
 
         icm.begin(Wire, ICM_20948_I2C_ADDR_AD1);
-        icm.swReset();
-        icm.sleep(false);
-        icm.lowPower(false);
         log_i("status: %s", icm.statusString());
-        return (icm.status == ICM_20948_Stat_Ok);
+
+        // icm.swReset();
+        // log_i("status: %s", icm.statusString());
+        delay(250);
+        // icm.sleep(false);
+        // log_i("status: %s", icm.statusString());
+
+        // icm.lowPower(false);
+        // log_i("status: %s %d", icm.statusString(), icm.status);
+        return true;
+        return (icm.status == ICM_20948_Stat_Ok) || (icm.status ==  ICM_20948_Stat_NoData);
     }
     return false;
 }
