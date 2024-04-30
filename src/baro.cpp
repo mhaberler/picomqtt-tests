@@ -11,43 +11,62 @@
 #include "meteo.hpp"
 
 dps_sensors_t dps_sensors[] = {
+#ifdef DPS0
     {
         0, 0, NULL, false, &Wire, 0x77, "dps368-0",
-        TEMP_MR,
-        TEMP_OSR,
-        PRS_MR,
-        PRS_OSR,
+        TEMP_MEASURE_RATE,
+        TEMP_OVERSAMPLING_RATE,
+        PRS_MEASURE_RATE,
+        PRS_OVERSAMPLING_RATE,
         0,0,
         TEMP_ALPHA,
         PRS_ALPHA
     },
+#endif
+#ifdef DPS1
     {
         0, 0,  NULL, false, &Wire, 0x76, "dps368-1",
-        TEMP_MR,
-        TEMP_OSR,
-        PRS_MR,
-        PRS_OSR,
+        TEMP_MEASURE_RATE,
+        TEMP_OVERSAMPLING_RATE,
+        PRS_MEASURE_RATE,
+        PRS_OVERSAMPLING_RATE,
         0,0,
         TEMP_ALPHA,
         PRS_ALPHA
     },
+#endif
+#ifdef DPS2
     {
         0, 0,  NULL, false, &Wire1, 0x77, "dps368-2",
-        TEMP_MR,
-        TEMP_OSR,
-        PRS_MR,
-        PRS_OSR,
+        TEMP_MEASURE_RATE,
+        TEMP_OVERSAMPLING_RATE,
+        PRS_MEASURE_RATE,
+        PRS_OVERSAMPLING_RATE,
+        0,0,
+        TEMP_ALPHA,
+        PRS_ALPHA
+    },
+#endif
+#ifdef DPS3
+    {
+        0, 0,  NULL, false, &Wire1, 0x76, "dps368-3",
+        TEMP_MEASURE_RATE,
+        TEMP_OVERSAMPLING_RATE,
+        PRS_MEASURE_RATE,
+        PRS_OVERSAMPLING_RATE,
         0,0,
         TEMP_ALPHA,
         PRS_ALPHA
     }
+#endif
 };
+#define NUM_DPS (sizeof(dps_sensors)/sizeof(dps_sensors[0]))
 
 bool dps368_setup(int i) {
     dps_sensors_t *d = &dps_sensors[i];
     if (i2c_probe(*d->wire, d->i2caddr)) {
         Dps3xx *sensor = new Dps3xx();
-        sensor->begin(Wire, d->i2caddr);
+        sensor->begin(*d->wire, d->i2caddr);
         log_i("%s: product 0x%x revision 0x%x", d->topic, sensor->getProductId(), sensor->getRevisionId());
         sensor->standby();
         d->prs_tick = d->temp_tick = micros();
@@ -67,7 +86,7 @@ bool dps368_setup(int i) {
 }
 
 void baro_loop(void) {
-    for (auto i = 0; i < 3; i++) {
+    for (auto i = 0; i < NUM_DPS; i++) {
         dps_sensors_t *d = &dps_sensors[i];
         if (!d->initialized)
             continue;
@@ -82,7 +101,7 @@ void baro_loop(void) {
         int16_t ret = d->sensor->getContResults(temperature, temperatureCount, pressure, pressureCount);
         unsigned long now = micros();
 
-        // log_d("tcount %u pcount %u",  temperatureCount, pressureCount);
+        //log_d("tcount %u pcount %u",  temperatureCount, pressureCount);
 
         JsonDocument json;
         json["tick"] = micros();
@@ -136,7 +155,7 @@ void baro_loop(void) {
 
 uint8_t baro_setup(void) {
     uint8_t dps_count = 0;
-    for (auto i = 0; i < 3; i++) {
+    for (auto i = 0; i < NUM_DPS; i++) {
         if (dps368_setup(i))
             dps_count++;
     }

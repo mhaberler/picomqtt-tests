@@ -39,8 +39,12 @@ void setup() {
     log_i("SDK version: %s", ESP.getSdkVersion());
 
     Wire.begin();
+    Wire.setClock(400000);
+    Wire1.begin();
+    Wire1.setClock(400000);
     i2c_scan(Wire);
-
+    i2c_scan(Wire1);
+    
     log_i("mounting SD card");
     initSDCard();
 #ifdef DEM_SUPPORT

@@ -2,13 +2,25 @@
 #include <Arduino.h>
 #include <Dps3xx.h>
 #include "RunningStats.hpp"
-#define TEMP_ALPHA 0.1
-#define PRS_ALPHA 0.3
-#define TEMP_MR   DPS__MEASUREMENT_RATE_1
-#define TEMP_OSR  DPS__OVERSAMPLING_RATE_128
-#define PRS_MR    DPS__MEASUREMENT_RATE_1
-#define PRS_OSR   DPS__OVERSAMPLING_RATE_1
 
+#ifndef TEMP_ALPHA
+#define TEMP_ALPHA 0.1
+#endif
+#ifndef PRS_ALPHA
+#define PRS_ALPHA 0.3
+#endif
+#ifndef TEMP_MEASURE_RATE
+#define TEMP_MEASURE_RATE   DPS__MEASUREMENT_RATE_1
+#endif
+#ifndef TEMP_OVERSAMPLING_RATE
+#define TEMP_OVERSAMPLING_RATE  DPS__OVERSAMPLING_RATE_128
+#endif
+#ifndef PRS_MEASURE_RATE
+#define PRS_MEASURE_RATE    DPS__MEASUREMENT_RATE_1
+#endif
+#ifndef PRS_OVERSAMPLING_RATE
+#define PRS_OVERSAMPLING_RATE   DPS__OVERSAMPLING_RATE_1
+#endif
 
 typedef struct  {
     uint32_t temp_cnt, prs_cnt;
