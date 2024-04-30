@@ -3,6 +3,7 @@
 #include "i2cio.hpp"
 #include "scanner.hpp"
 
+
 #include <ICM_20948.h>
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h>
 #include <PicoMQTT.h>
@@ -25,7 +26,9 @@ TICKER(ble, BLE_INTERVAL);
 void sensor_loop(void) {
     if (TIME_FOR(baro)) {
         baro_loop();
-
+#ifdef KALMAN
+        // kalman_step();
+#endif
         DONE_WITH(baro);
     }
     if (TIME_FOR(gps)) {
@@ -50,6 +53,9 @@ void sensor_setup(void) {
 #ifdef BLE_SUPPORT
     setup_ble();
     RUNTICKER(ble);
+#endif
+#ifdef KALMAN
+    // kalman_setup();
 #endif
     if (baro_setup()) {
         RUNTICKER(baro);
