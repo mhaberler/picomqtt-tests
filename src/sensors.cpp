@@ -20,6 +20,7 @@ TICKER(baro, BARO_INTERVAL);
 TICKER(gps, GPS_INTERVAL);
 TICKER(imu, IMU_INTERVAL);
 TICKER(stats, STATS_INTERVAL);
+TICKER(ble, BLE_INTERVAL);
 
 void sensor_loop(void) {
     if (TIME_FOR(baro)) {
@@ -29,12 +30,15 @@ void sensor_loop(void) {
     }
     if (TIME_FOR(gps)) {
         ublox_loop();
-        process_ble();
         DONE_WITH(gps);
     }
     if (TIME_FOR(imu)) {
         imu_loop();
         DONE_WITH(imu);
+    }
+    if (TIME_FOR(ble)) {
+        process_ble();
+        DONE_WITH(ble);
     }
     if (TIME_FOR(stats)) {
         stats_loop();
@@ -43,7 +47,10 @@ void sensor_loop(void) {
 }
 
 void sensor_setup(void) {
+#ifdef BLE_SUPPORT
     setup_ble();
+    RUNTICKER(ble);
+#endif
     if (baro_setup()) {
         RUNTICKER(baro);
     }

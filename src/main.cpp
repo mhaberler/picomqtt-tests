@@ -43,9 +43,9 @@ void setup() {
 
     log_i("mounting SD card");
     initSDCard();
-    
+#ifdef DEM_SUPPORT
     dem_setup();
-
+#endif
     webserver_setup();
     sensor_setup();
 

@@ -57,13 +57,14 @@ ublox_nav_pvt (UBX_NAV_PVT_data_t *ub) {
                 double lon = ub_nav_pvt.lon * 1e-7;
                 json["lat"] = lat;
                 json["lon"] = lon;
-
+#ifdef DEM_SUPPORT
                 locInfo_t li = {};
                 double ele;
                 int rc = getLocInfo(lat, lon, &li);
                 if (li.status == LS_VALID) {
                     json["ele"] = li.elevation;
                 }
+#endif
             }
             __attribute__ ((fallthrough));
         default:
