@@ -19,7 +19,7 @@
 #define PRS_MEASURE_RATE    DPS__MEASUREMENT_RATE_1
 #endif
 #ifndef PRS_OVERSAMPLING_RATE
-#define PRS_OVERSAMPLING_RATE   DPS__OVERSAMPLING_RATE_1
+#define PRS_OVERSAMPLING_RATE   DPS__OVERSAMPLING_RATE_128
 #endif
 
 typedef struct  {
@@ -36,6 +36,7 @@ typedef struct  {
     unsigned long temp_tick, prs_tick;
     float temp_alpha, prs_alpha;
     float temp_smoothed, prs_smoothed;
+    float previous_altitude;
 } dps_sensors_t;
 
 extern dps_sensors_t dps_sensors[];

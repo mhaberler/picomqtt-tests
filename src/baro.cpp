@@ -9,6 +9,7 @@
 #include "broker.hpp"
 #include "stats.hpp"
 #include "meteo.hpp"
+#include "hKalF_acc.h"
 
 dps_sensors_t dps_sensors[] = {
 #ifdef DPS0
@@ -62,6 +63,8 @@ dps_sensors_t dps_sensors[] = {
 };
 #define NUM_DPS (sizeof(dps_sensors)/sizeof(dps_sensors[0]))
 
+HKalF ekf[NUM_DPS];
+
 bool dps368_setup(int i) {
     dps_sensors_t *d = &dps_sensors[i];
     if (i2c_probe(*d->wire, d->i2caddr)) {
@@ -86,12 +89,29 @@ void baro_loop(void) {
             continue;
         float pressure;
         int16_t val =  d->sensor->measurePressureOnce(pressure, d->prs_osr);
-        d->prs_tick = millis();
+        uint32_t now = millis();
+
         JsonDocument json;
-        json["tick"] = d->prs_tick;
+        json["tick"] = now;
         float hPa = pressure  / 100.0;
         json["hPa"] = hPa;
-        json["alt"] = Get_QNH_Altitude(hPa, QNH);
+        float altitude = Get_QNH_Altitude(hPa, QNH);
+        json["alt"] = altitude;
+
+        if (d->previous_altitude > 0.0) {
+            float delta_t = (now - d->prs_tick) /1000.0;  // sec
+            float delta_alt = d->previous_altitude - altitude;
+            float vertical_speed = delta_alt/delta_t;       // ms/s
+            json["vspeed"] = vertical_speed;
+
+            if (ekf[i].accKalman(now/1000.0, pressure, altitude, vertical_speed)) {
+                json["v_baro"] = ekf[i].verticalSpeed();
+                json["a_baro"]  =  ekf[i].verticalAcceleration();
+            }
+
+        }
+        d->previous_altitude = altitude;
+        d->prs_tick = now;
         auto publish = mqtt.begin_publish(d->topic, measureJson(json));
         serializeJson(json, publish);
         publish.send();
