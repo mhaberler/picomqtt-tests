@@ -17,20 +17,14 @@
 #include "RunningStats.hpp"
 #include "meteo.hpp"
 
-TICKER(baro, BARO_INTERVAL);
 TICKER(gps, GPS_INTERVAL);
 TICKER(imu, IMU_INTERVAL);
 TICKER(stats, STATS_INTERVAL);
 TICKER(ble, BLE_INTERVAL);
 
 void sensor_loop(void) {
-    if (TIME_FOR(baro)) {
-        baro_loop();
-#ifdef KALMAN
-        // kalman_step();
-#endif
-        DONE_WITH(baro);
-    }
+    baro_loop();
+
     if (TIME_FOR(gps)) {
         ublox_loop();
         DONE_WITH(gps);
@@ -54,12 +48,7 @@ void sensor_setup(void) {
     setup_ble();
     RUNTICKER(ble);
 #endif
-#ifdef KALMAN
-    // kalman_setup();
-#endif
-    if (baro_setup()) {
-        RUNTICKER(baro);
-    }
+    baro_setup();
     if (ublox_setup()) {
         RUNTICKER(gps);
     }

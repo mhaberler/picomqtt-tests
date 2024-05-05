@@ -1,128 +1,267 @@
-#include <Arduino.h>
-#include "i2cio.hpp"
-#include <Dps3xx.h>
-#include <PicoMQTT.h>
-#include <ArduinoJson.h>
-#include "timingpin.hpp"
-#include "tickers.hpp"
 #include "baro.hpp"
-#include "broker.hpp"
-#include "stats.hpp"
+#include "params.hpp"
 #include "meteo.hpp"
 #include "hKalF_acc.h"
+#include "TimerStats.hpp"
+#include "ArduinoJson.h"
+#include "broker.hpp"
 
-dps_sensors_t dps_sensors[] = {
-#ifdef DPS0
-    {
-        0, 0, NULL, false, &Wire, 0x77, "dps368-0",
-        TEMP_MEASURE_RATE,
-        TEMP_OVERSAMPLING_RATE,
-        PRS_MEASURE_RATE,
-        PRS_OVERSAMPLING_RATE,
-        0,0,
-        TEMP_ALPHA,
-        PRS_ALPHA
-    },
-#endif
-#ifdef DPS1
-    {
-        0, 0,  NULL, false, &Wire, 0x76, "dps368-1",
-        TEMP_MEASURE_RATE,
-        TEMP_OVERSAMPLING_RATE,
-        PRS_MEASURE_RATE,
-        PRS_OVERSAMPLING_RATE,
-        0,0,
-        TEMP_ALPHA,
-        PRS_ALPHA
-    },
-#endif
-#ifdef DPS2
-    {
-        0, 0,  NULL, false, &Wire1, 0x77, "dps368-2",
-        TEMP_MEASURE_RATE,
-        TEMP_OVERSAMPLING_RATE,
-        PRS_MEASURE_RATE,
-        PRS_OVERSAMPLING_RATE,
-        0,0,
-        TEMP_ALPHA,
-        PRS_ALPHA
-    },
-#endif
-#ifdef DPS3
-    {
-        0, 0,  NULL, false, &Wire1, 0x76, "dps368-3",
-        TEMP_MEASURE_RATE,
-        TEMP_OVERSAMPLING_RATE,
-        PRS_MEASURE_RATE,
-        PRS_OVERSAMPLING_RATE,
-        0,0,
-        TEMP_ALPHA,
-        PRS_ALPHA
+QueueHandle_t irq_queue;
+espidf::RingBuffer *baro_queue;
+
+uint32_t irq_queue_full, baro_queue_full, commit_fail;
+
+
+// first level interrupt handler
+// only notify 2nd level handler task passing any parameters
+static void IRAM_ATTR  irq_handler(void *param) {
+    irqmsg_t msg;
+    msg.dev = static_cast<dps_sensors_t *>(param);
+    msg.timestamp = micros();
+    if (xQueueSendFromISR(irq_queue, (const void*) &msg, NULL) != pdTRUE) {
+        irq_queue_full++;
     }
-#endif
-};
-#define NUM_DPS (sizeof(dps_sensors)/sizeof(dps_sensors[0]))
+}
 
-HKalF ekf[NUM_DPS];
+// 2nd level interrupt handler
+// runs in user context - can do Wire I/O, log etc
+void soft_irq(void* arg) {
+    irqmsg_t msg;
 
-bool dps368_setup(int i) {
-    dps_sensors_t *d = &dps_sensors[i];
-    if (i2c_probe(*d->wire, d->i2caddr)) {
-        Dps3xx *sensor = new Dps3xx();
-        sensor->begin(*d->wire, d->i2caddr);
-        log_i("%s: product 0x%x revision 0x%x", d->topic, sensor->getProductId(), sensor->getRevisionId());
+    for (;;) {
+        if (xQueueReceive(irq_queue, &msg, portMAX_DELAY)) {
+            float value;
+            int16_t ret ;
+            dps_sensors_t *dev = msg.dev;
+            Dps3xx *dps = dev->sensor;
+
+            if ((ret = dps->getSingleResult(value)) != 0) {
+                log_e("getSingleResult: %d",ret);
+                continue;
+            }
+
+            if ((ret = dps->getIntStatusPrsReady()) < 0) {
+                log_e("getIntStatusPrsReady: %d",ret);
+                continue;
+            }
+
+            // a pressure sample is ready
+            baroSample_t *bs = nullptr;
+            size_t sz = sizeof(baroSample_t);
+            if (baro_queue->send_acquire((void **)&bs, sz, 0) != pdTRUE) {
+                baro_queue_full++;
+            } else  {
+                bs->dev_id = dev->dev_id;
+                bs->dev = dev;
+                bs->timestamp = msg.timestamp;
+                if (ret == 1) {
+                    bs->type  = SAMPLE_PRESSURE;
+                    bs->value = value / 100.0f;  // scale to hPa
+                } else {
+                    bs->type  = SAMPLE_TEMPERATURE;
+                    bs->value = value; // already degC
+                }
+                if (baro_queue->send_complete(bs) != pdTRUE) {
+                    commit_fail++;
+                }
+            }
+
+
+            // // ret == 0 || ret == 1
+            // log_i("dev=0x%x timestamp=%u %s=%.2f %s",
+            //       dev->i2caddr, msg.timestamp,
+            //       ret ? "pressure" : "temperature",
+            //       value,
+            //       ret ? "kPa"  : "°C");
+
+            // start a new measurement cycle
+            // every count & TEMP_COUNT_MASK pressure measurements start a temperature measurement
+            // to keep correction accurate
+            dev->softirq_count++;
+            if ((dev->softirq_count & dev->temp_measure_mask)) {
+                if ((ret = dps->startMeasurePressureOnce(dev->prs_osr)) != 0) {
+                    log_e("startMeasurePressureOnce: %d",ret);
+                }
+            } else {
+                if ((ret = dps->startMeasureTempOnce(dev->temp_osr)) != 0) {
+                    log_e("startMeasureTempOnce: %d",ret);
+                }
+            }
+        }
+    }
+}
+
+int32_t baro_setup(void) {
+    int16_t ret;
+    int32_t num_devs = 0;
+
+    irq_queue = xQueueCreate(10, sizeof(irqmsg_t));
+    baro_queue = new espidf::RingBuffer();
+    baro_queue->create(BARO_QUEUELEN, RINGBUF_TYPE_NOSPLIT);
+    xTaskCreate(soft_irq, "soft_irq", 2048, NULL, 10, NULL);
+
+    for (auto i = 0; i < num_sensors; i++) {
+        dps_sensors_t *dev = &dps_sensors[i];
+        Dps3xx *dps = dev->sensor = new Dps3xx();
+        dev->dev_id = i;
+
+        dps->begin(*dev->wire, dev->i2caddr);
+        if ((ret = dps->standby()) != DPS__SUCCEEDED) {
+            log_e("standby failed: %d", ret);
+            delete dps;
+            continue;
+        }
+
+        pinMode(dev->irq_pin, INPUT);
+        uint8_t polarity;
+        if (dev->i2caddr == 0x77) {
+            // on standard address
+            attachInterruptArg(digitalPinToInterrupt(dev->irq_pin), irq_handler, (void *)dev, RISING);
+            polarity = 1;
+        } else {
+            // secondary address
+            attachInterruptArg(digitalPinToInterrupt(dev->irq_pin), irq_handler, (void *)dev, FALLING);
+            polarity = 0;
+        }
+        log_i("dev=%d addr=0x%x irq pin=%u polarity=%u", i, dev->i2caddr, dev->irq_pin, polarity);
+
+        // identify the device
+        log_i("DPS3xx: product 0x%x revision 0x%x",
+              dps->getProductId(),
+              dps->getRevisionId());
+
+        // measure temperature once for pressure compensation
         float temperature;
-        int16_t ret = sensor->measureTempOnce(temperature, 7);
-        log_i("%s: calibrate at %.2f°", d->topic, temperature);
-        sensor->standby();
-        d->initialized = true;
-        d->sensor = sensor;
+        if ((ret = dps->measureTempOnce(temperature, dev->temp_osr)) != 0) {
+            log_e("measureTempOnce failed ret=%d", ret);
+        } else {
+            log_i("dps3xx compensating for %.2f°", temperature);
+        }
+
+        // define what causes an interrupt: both temperature and pressure conversion
+        // FIXME polarity
+        if ((ret = dps->setInterruptSources(DPS3xx_BOTH_INTR, polarity)) != 0) {
+            log_i("setInterruptSources: %d", ret);
+        }
+
+        // clear interrupt flags by reading the IRQ status register
+        if ((ret = dps->getIntStatusPrsReady()) != 0) {
+            log_i("getIntStatusPrsReady: %d", ret);
+        }
+
+        // start one-shot conversion
+        // interrupt will be posted at end of conversion
+        if ((ret = dps->startMeasurePressureOnce(dev->prs_osr)) != 0) {
+            log_e("startMeasurePressureOnce: %d", ret);
+        }
+
+        dev->initialized = true;
+        num_devs++;
+    }
+    return num_devs;
+}
+
+
+// fetch a baro sample from the baro queue
+// return false if no sample present
+bool get_baro_sample(baroSample_t &s) {
+    size_t sz = 0;
+    baroSample_t *bs = (baroSample_t *)baro_queue->receive(&sz, 0);
+    if (bs != nullptr) {
+        s = *bs;
+        baro_queue->return_item(bs);
         return true;
     }
     return false;
 }
 
-void baro_loop(void) {
-    for (auto i = 0; i < NUM_DPS; i++) {
-        dps_sensors_t *d = &dps_sensors[i];
-        if (!d->initialized)
-            continue;
-        float pressure;
-        int16_t val =  d->sensor->measurePressureOnce(pressure, d->prs_osr);
-        uint32_t now = millis();
+#define MAX_SENSORS 4
+static HKalF ekfs[MAX_SENSORS];  // per-device Kalman filter
+TimerStats kalman_step;
 
-        JsonDocument json;
-        json["tick"] = now;
-        float hPa = pressure  / 100.0;
-        json["hPa"] = hPa;
-        float altitude = Get_QNH_Altitude(hPa, QNH);
-        json["alt"] = altitude;
-
-        if (d->previous_altitude > 0.0) {
-            float delta_t = (now - d->prs_tick) /1000.0;  // sec
-            float delta_alt = d->previous_altitude - altitude;
-            float vertical_speed = delta_alt/delta_t;       // ms/s
-            json["vspeed"] = vertical_speed;
-
-            if (ekf[i].accKalman(now/1000.0, pressure, altitude, vertical_speed)) {
-                json["v_baro"] = ekf[i].verticalSpeed();
-                json["a_baro"]  =  ekf[i].verticalAcceleration();
-            }
-
-        }
-        d->previous_altitude = altitude;
-        d->prs_tick = now;
-        auto publish = mqtt.begin_publish(d->topic, measureJson(json));
-        serializeJson(json, publish);
-        publish.send();
-    }
+void kalman_stepz_error(double x0, double x1, double x2)  {
+    log_e("step error  x0=%f x1=%f x2=%f", x0, x1, x2);
 }
 
-uint8_t baro_setup(void) {
-    uint8_t dps_count = 0;
-    for (auto i = 0; i < NUM_DPS; i++) {
-        if (dps368_setup(i))
-            dps_count++;
+
+void baro_loop(void) {
+    if (irq_queue_full || baro_queue_full || commit_fail) {
+        log_e("irq_queue_full=%d baro_queue_full=%d commit_fail=%d", irq_queue_full, baro_queue_full, commit_fail);
+        irq_queue_full = 0;
+        baro_queue_full = 0;
+        commit_fail = 0;
     }
-    return dps_count;
+
+    baroSample_t s;
+    if (get_baro_sample(s)) {
+        // a sample from the baro sensor queue is available.
+        // log_i("dev_id=%u type=%u ts=%.3f value=%.2f", s.dev_id, s.type, s.timestamp, s.value);
+
+        if (s.type == SAMPLE_PRESSURE) {
+            // it's a pressure sample
+            dps_sensors_t *dev = s.dev;      // device the sample came from
+            HKalF *ekf = &ekfs[dev->dev_id]; // per-device EKF instance
+
+            float alt = altitude_from_pressure(s.value);
+            float timestamp_sec = s.timestamp * 1.0e-6; // sensor time of sample
+
+            // initialize first time around
+            if ((dev->previous_time < 0.0) && (timestamp_sec > STARTUP_SEC)) {
+                dev->previous_alt = alt;
+                dev->previous_time = timestamp_sec;
+            }
+
+            // compute vertical speed
+            float delta_alt = alt - dev->previous_alt;           // meter
+            float delta_t = timestamp_sec - dev->previous_time;  // sec
+            float vertical_speed = delta_alt/delta_t;       // ms/s
+
+            // prime the altitude variance
+            if (dev->initial_alt_values > 0) {
+                log_d("primeAltitude(%.2f)", alt);
+                ekf->primeAltitude(alt);
+                dev->initial_alt_values--;
+                return;
+            }
+            // log_i("ts %f p %f alt %f vs %f",timestamp_sec, s.value, alt, vertical_speed);
+
+            kalman_step.Start();
+            bool success = ekf->accKalman(timestamp_sec, s.value, alt, vertical_speed);
+            kalman_step.Stop();
+
+            if (success) {
+
+                JsonDocument json;
+                json["time"] = timestamp_sec;
+                json["hPa"] = s.value;
+                json["alt"] = alt;
+                json["vspeed"] = vertical_speed;
+                json["v_baro"] = ekf->verticalSpeed();
+                json["a_baro"] = ekf->verticalAcceleration();
+
+                auto publish = mqtt.begin_publish(dev->topic, measureJson(json));
+                serializeJson(json, publish);
+                publish.send();
+#if 0
+                log_i("t=%.1f pressure=%.2f v_baro=%.2f a_baro=%.2f altVar=%.3f varioVar=%.3f kalman_step=%d uS",
+                      ekf->timeOfLastStep(),
+                      ekf->pressureOfLastStep(),
+                      ekf->verticalSpeed(),
+                      ekf->verticalAcceleration(),
+                      ekf->altitudeVariance(),
+                      ekf->verticalSpeedVariance(),
+                      (int32_t) kalman_step.Mean());
+#endif
+            } else {
+                kalman_stepz_error(ekf->getX(0), ekf->getX(1), ekf->getX(2));
+            }
+        } else {
+            // a temperature sample - unused
+        }
+    }
+#if 1
+
+
+
+#endif
 }

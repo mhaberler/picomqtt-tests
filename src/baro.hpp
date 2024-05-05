@@ -1,49 +1,58 @@
 #pragma once
-#include <Arduino.h>
-#include <Dps3xx.h>
-#include "RunningStats.hpp"
 
-#ifndef TEMP_ALPHA
-#define TEMP_ALPHA 0.1
-#endif
-#ifndef PRS_ALPHA
-#define PRS_ALPHA 0.3
-#endif
-#ifndef TEMP_MEASURE_RATE
-#define TEMP_MEASURE_RATE   DPS__MEASUREMENT_RATE_1
-#endif
-#ifndef TEMP_OVERSAMPLING_RATE
-#define TEMP_OVERSAMPLING_RATE  DPS__OVERSAMPLING_RATE_128
-#endif
-#ifndef PRS_MEASURE_RATE
-#define PRS_MEASURE_RATE    DPS__MEASUREMENT_RATE_1
-#endif
-#ifndef PRS_OVERSAMPLING_RATE
-#define PRS_OVERSAMPLING_RATE   DPS__OVERSAMPLING_RATE_128
-#endif
+#include <Dps3xx.h>
+
+#include "ringbuffer.hpp"
+
+extern espidf::RingBuffer *baro_queue;
+
+typedef enum {
+    SAMPLE_INVALID,
+    SAMPLE_PRESSURE,
+    SAMPLE_TEMPERATURE,
+} sample_t;
+
 
 typedef struct  {
-    uint32_t temp_cnt, prs_cnt;
-    Dps3xx *sensor;
-    bool initialized;
-    TwoWire *wire;
+    uint8_t dev_id;
     uint8_t i2caddr;
-    const char *topic;
-    int16_t temp_mr;
+    uint8_t irq_pin;
+    uint8_t status;
+    bool initialized;
+    Dps3xx *sensor;
+    uint32_t softirq_count;
+    uint32_t temp_measure_mask;
+    TwoWire *wire;
     int16_t temp_osr;
-    int16_t prs_mr;
     int16_t prs_osr;
-    unsigned long temp_tick, prs_tick;
-    float temp_alpha, prs_alpha;
-    float temp_smoothed, prs_smoothed;
-    float previous_altitude;
+    // per-instance tracking values
+    float previous_alt;
+    float previous_time;
+    uint32_t initial_alt_values;
+    // MQTT-relate
+    const char *topic;
 } dps_sensors_t;
 
-extern dps_sensors_t dps_sensors[];
-extern uint8_t dps_count; 
-#ifdef STATS
-extern RunningStats alt_stats;
-#endif
+typedef struct  {
+    uint8_t dev_id;
+    dps_sensors_t *dev;
+    sample_t type;
+    float timestamp;   // uS
+    float value;       // hPa/degC
+} baroSample_t;
 
+typedef struct {
+    uint32_t timestamp;
+    dps_sensors_t *dev;
+} irqmsg_t;
+
+bool get_baro_sample(baroSample_t &s);
+int32_t baro_setup(void);
 void baro_loop(void);
-uint8_t baro_setup(void);
+
+extern uint32_t irq_queue_full, baro_queue_full, commit_fail;
+
+extern dps_sensors_t dps_sensors[];
+extern uint32_t num_sensors;
+
+
