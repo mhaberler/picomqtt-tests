@@ -30,8 +30,8 @@ void setup() {
     delay(3000);
     M5.begin();
 
-    Serial.begin(115200);
-    Serial.setDebugOutput(true);
+    // Serial.begin(115200);
+    // Serial.setDebugOutput(true);
 
     log_i("CPU: %s rev%d, CPU Freq: %d Mhz, %d core(s)", ESP.getChipModel(), ESP.getChipRevision(), getCpuFrequencyMhz(), ESP.getChipCores());
     log_i("Free heap: %d bytes", ESP.getFreeHeap());
@@ -42,12 +42,13 @@ void setup() {
     Wire.setClock(400000);
     Wire1.begin();
     Wire1.setClock(400000);
-    i2c_scan(Wire);
-    i2c_scan(Wire1);
-    
+    // i2c_scan(Wire);
+    // i2c_scan(Wire1);
+
+#ifdef DEM_SUPPORT    
     log_i("mounting SD card");
     initSDCard();
-#ifdef DEM_SUPPORT
+
     dem_setup();
 #endif
     webserver_setup();

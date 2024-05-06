@@ -12,7 +12,7 @@ void i2c_scan(TwoWire &w) {
     for (auto i = 0; i < 128; i++) {
         w.beginTransmission(i);
         if (w.endTransmission() == 0) {
-            Serial.printf("Wire%u dev at 0x%x\n", bus, i);
+            log_i("Wire%u dev at 0x%x\n", bus, i);
         }
     }
 }
