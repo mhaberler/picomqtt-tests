@@ -2,6 +2,19 @@
 
 
 <DashboardPage title="Balloon">
+<Card title="Vertical speed">
+    <ViewUnit
+      topic="dps368-0"
+      subconvert={JSONConvert(value => value["verticalSpeedKF"])}
+    />
+  </Card>
+  
+<Card title="Ruuvi temperature">
+    <ViewUnit
+      topic="dps368-0"
+      subconvert={JSONConvert(value => value["verticalSpeedKF"])}
+    />     
+  </Card>
 
   <ViewCard
     title="Linear gauge card"
@@ -10,10 +23,9 @@
 
     format={LinearIconFormat({
       title: "vertical speed",
-      unit: "meter",
-      maximumSignificantDigits: 1,
-      min: -1.0,
-      max: 1.0,
+      step: 1,
+      min: -5.0,
+      max: 5.0,
     })}
   />
   <ViewCard
@@ -22,8 +34,8 @@
     subconvert={JSONConvert(value => value["verticalSpeedKF"])}
     format={DashboardIconFormat({
       title: "vertical speed",
-      min: -1.0,
-      max: 1.0
+      min: -5.0,
+      max: 5.0
     })}
   />
   <Card title="CPU temperature">
