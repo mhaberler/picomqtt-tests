@@ -12,7 +12,8 @@ dps_sensors_t dps_sensors[] = {
         .wire = &Wire,
         .temp_osr = TEMP_OVERSAMPLING_RATE,
         .prs_osr = PRESS_OVERSAMPLING_RATE,
-        .previous_time = -1.0,
+        .previous_alt = -1e6,
+        .previous_time = -1e6,
         .initial_alt_values = INITIAL_ALTITUDE_VALUES,
         .topic = "dps368-0"
     }

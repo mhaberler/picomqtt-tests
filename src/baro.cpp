@@ -206,10 +206,16 @@ void baro_loop(void) {
             float timestamp_sec = s.timestamp * 1.0e-6; // sensor time of sample
 
             // initialize first time around
-            if ((dev->previous_time < 0.0) && (timestamp_sec > STARTUP_SEC)) {
+            if (dev->previous_time < 0.0) {
                 dev->previous_alt = alt;
                 dev->previous_time = timestamp_sec;
+                return;
             }
+            if (dev->previous_alt < 0) {
+                dev->previous_alt = alt;
+                return;
+            }
+            // now dev->previous_alt and dev->previous_time are valid
 
             // compute vertical speed
             float delta_alt = alt - dev->previous_alt;           // meter
@@ -218,8 +224,8 @@ void baro_loop(void) {
 
             // prime the altitude variance
             if (dev->initial_alt_values > 0) {
-                log_d("primeAltitude(%.2f)", alt);
-                ekf->primeAltitude(alt);
+                log_d("prime(alt=%.2f, vspeed=%.2f)", alt, vertical_speed);
+                ekf->prime(alt, vertical_speed);
                 dev->initial_alt_values--;
                 return;
             }
@@ -234,10 +240,12 @@ void baro_loop(void) {
                 JsonDocument json;
                 json["time"] = timestamp_sec;
                 json["hPa"] = s.value;
-                json["alt"] = alt;
-                json["vspeed"] = vertical_speed;
-                json["v_baro"] = ekf->verticalSpeed();
-                json["a_baro"] = ekf->verticalAcceleration();
+                json["altitude"] = alt;
+                json["verticalSpeedRaw"] = vertical_speed;
+                json["verticalSpeedKF"] = ekf->verticalSpeed();
+                json["verticalAccelerationKF"] = ekf->verticalAcceleration();
+                json["altitudeVariance"] = ekf->altitudeVariance();
+                json["verticalSpeedVariance"] = ekf->verticalSpeedVariance();
 
                 auto publish = mqtt.begin_publish(dev->topic, measureJson(json));
                 serializeJson(json, publish);
