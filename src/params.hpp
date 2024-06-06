@@ -13,3 +13,5 @@
 
 #define UBLOX_I2C_ADDR 0x42
 
+#define I2C_100K 100000
+#define I2C_400K 400000
