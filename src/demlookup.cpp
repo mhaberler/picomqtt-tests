@@ -1,8 +1,8 @@
 
 #ifdef DEVKITC
-#include <Arduino.h>
+    #include <Arduino.h>
 #else
-#include <M5Unified.h>
+    #include <M5Unified.h>
 #endif
 #include <esp_task_wdt.h>
 
@@ -28,13 +28,13 @@ void dem_setup(void) {
         log_e("addDEM fail: %d\n", rc);
     } else {
         log_i("%s: zoom %d..%d resolution: %.2fm/pixel coverage %.2f/%.2f..%.2f/%.2f type %s",
-                 di->path, di->header.min_zoom, di->header.max_zoom,
-                 meters_per_pixel(di),
-                 min_lat(di), min_lon(di),
-                 max_lat(di), max_lon(di),
-                 tileType(di->header.tile_type));
+              di->path, di->header.min_zoom, di->header.max_zoom,
+              meters_per_pixel(di),
+              min_lat(di), min_lon(di),
+              max_lat(di), max_lon(di),
+              tileType(di->header.tile_type));
     }
-
+#ifdef DEM_TEST
     lat = 47.12925176802318;
     lon = 15.209778656353123;
     ref = 865.799987792969;
@@ -84,6 +84,7 @@ void dem_setup(void) {
 
     log_i("free heap: %lu", ESP.getFreeHeap());
     log_i("used psram: %lu", ESP.getPsramSize() - ESP.getFreePsram());
+#endif
 }
 
 void dem_loop(void) {
