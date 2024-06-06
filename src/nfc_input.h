@@ -2,7 +2,6 @@
 
 #include <stdint.h>
 
-#define NFC_MAX_MSG_SIZE 1024
 
 typedef enum {
     BWTAG_NO_MATCH,

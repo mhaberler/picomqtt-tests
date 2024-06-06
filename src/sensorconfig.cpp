@@ -13,6 +13,7 @@ dps_sensors_t dps_sensors[] = {
             .irq_pin_mode = INPUT_PULLUP,
             .irq_pin_edge= FALLING,
             .irq_attached = false,
+            .device_present = false,
             .device_initialized = false,
             .topic = "baro/0"
         },
@@ -37,6 +38,7 @@ dps_sensors_t dps_sensors[] = {
             .irq_pin_mode = INPUT,
             .irq_pin_edge= RISING,
             .irq_attached = false,
+            .device_present = false,
             .device_initialized = false,
             .topic = "baro/1"
         },
@@ -62,6 +64,7 @@ dps_sensors_t dps_sensors[] = {
             .irq_pin_mode = INPUT_PULLUP,
             .irq_pin_edge= FALLING,
             .irq_attached = false,
+            .device_present = false,
             .device_initialized = false,
             .topic = "baro/2"
         },
@@ -89,6 +92,7 @@ icm20948_t imu_sensor = {
         .irq_pin_mode = INPUT, //  breakout board has pullup resistor
         .irq_pin_edge= FALLING,
         .irq_attached = false,
+        .device_present = false,
         .device_initialized = false,
         .topic = "imu"
     },
@@ -103,6 +107,7 @@ gps_sensor_t gpsconf = {
         .type = DEV_NEO_M9N,
         .i2caddr = UBLOX_I2C_ADDR,
         .irq_attached = false,
+        .device_present = false,
         .device_initialized = false,
         .topic = "gps"
     },
@@ -110,4 +115,17 @@ gps_sensor_t gpsconf = {
     .neo = &ublox_neo,
     .navFreq = NAV_FREQUENCY,
     .trace = false,
+};
+
+nfc_reader_t nfcconf = {
+    .dev = {
+        .type = DEV_MFRC522,
+        .i2caddr = MRFC522_I2C_ADDR,
+        .irq_attached = false,
+        .device_present = false,
+        .device_initialized = false,
+        .topic = "nfc"
+    },
+    .wire = &NFC_WIRE,
+    // .icm = &icm,
 };

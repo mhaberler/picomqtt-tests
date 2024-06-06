@@ -15,6 +15,7 @@ typedef enum {
     DEV_ICM_20948,
     DEV_M5STACK_IMU,
     DEV_NEO_M9N,
+    DEV_MFRC522,
     DEV_BATTERY,
     DEV_MICROPHONE,
 } device_t;
@@ -100,6 +101,11 @@ typedef struct  {
     uint8_t navFreq;
     bool trace;
 } gps_sensor_t;
+
+typedef struct  {
+    i2c_gendev_t dev;
+    TwoWire *wire;
+} nfc_reader_t;
 
 typedef struct  {
     dps_sensors_t *dev;

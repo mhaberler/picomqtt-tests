@@ -5,7 +5,7 @@
 #else
     #include <Arduino.h>
 #endif
-
+#include "params.hpp"
 #ifdef NFC_USE_I2C
     #include <MFRC522DriverI2C.h>
     #include <Wire.h>
@@ -22,30 +22,18 @@
 
 #include <SPI.h>
 #include <stdlib.h>
+
 #include "nfc_input.h"
 #include "i2cio.hpp"
 #include "broker.hpp"
+
 #include "fmicro.h"
-// #include "i2cfuncs.hpp"
-// #include "lvgl.h"
-// #include "lv_observer.h"
-// #include "lv_util.h"
-// #include "lv_subjects.hpp"
-// #include "ui.h"
-// #include "ui_message.hpp"
-// #include "ArduinoJsonCustom.h"
-// #include "mqtt.hpp"
 
 using StatusCode = MFRC522Constants::StatusCode;
 static MFRC522::MIFARE_Key key = {{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}};
 
-#ifndef NFC_WIRE
-    #define NFC_WIRE Wire
-#endif
-
 #ifdef NFC_USE_I2C
 const uint8_t customAddress = 0x28;
-TwoWire &customI2C = NFC_WIRE;
 MFRC522DriverI2C driver{customAddress, NFC_WIRE}; // Create I2C driver.
 
 #else
@@ -58,14 +46,11 @@ const SPISettings spiSettings = SPISettings(SPI_CLOCK_DIV4, MSBFIRST,
 MFRC522DriverSPI driver{ss_pin, spiClass, spiSettings}; // Create SPI driver.
 #endif
 
+bool nfc_reader_present;
 static bool mfrc522_initialized = false;
 
-MFRC522Extended mfrc522{driver}; // Create MFRC522 instance.
-
-NfcAdapter nfc = NfcAdapter(&mfrc522);
-
-#define BW_MIMETYPE "application/balloonware"
-#define BW_ALT_MIMETYPE "bw"
+static MFRC522Extended mfrc522{driver}; // Create MFRC522 instance.
+static NfcAdapter nfc = NfcAdapter(&mfrc522);
 
 static const char *ruuvi_ids[] = {
     "\002idID: ",
@@ -168,10 +153,10 @@ void nfc_setup(void) {
 }
 
 void nfc_loop(void) {
-    bool readerfound = i2c_probe(NFC_WIRE, customAddress);
+    nfc_reader_present = i2c_probe(NFC_WIRE, customAddress);
 
-    if (readerfound ^ mfrc522_initialized) {
-        if (readerfound) {
+    if (nfc_reader_present ^ mfrc522_initialized) {
+        if (nfc_reader_present) {
             // just plugged in
             log_e("RFID reader detected");
             mqtt.publish("nfc/reader", "1");
