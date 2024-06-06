@@ -132,6 +132,9 @@ void process_measurements(void) {
                     measurements_queue->return_item(p);
                 }
                 break;
+            // case DEV_MFRC522: { // FIXME
+
+            //     }
             case DEV_NONE:
                 measurements_queue->return_item(p);
                 break;

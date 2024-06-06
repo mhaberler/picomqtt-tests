@@ -3,6 +3,9 @@
 #include <Dps3xx.h>
 #include <ICM_20948.h>
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h>
+#include <MFRC522DriverI2C.h>
+#include <MFRC522Extended.h>
+#include <NfcAdapter.h>
 
 #include "irq.hpp"
 #ifdef EKF
@@ -105,6 +108,11 @@ typedef struct  {
 typedef struct  {
     i2c_gendev_t dev;
     TwoWire *wire;
+    MFRC522DriverI2C *driver;
+    MFRC522Extended *mfrc522;
+    NfcAdapter *nfc;
+    MFRC522::MIFARE_Key *key;
+    bool driver_instantiated;
 } nfc_reader_t;
 
 typedef struct  {

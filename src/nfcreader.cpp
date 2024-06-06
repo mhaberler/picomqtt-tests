@@ -6,13 +6,9 @@
     #include <Arduino.h>
 #endif
 #include "params.hpp"
-#ifdef NFC_USE_I2C
-    #include <MFRC522DriverI2C.h>
-    #include <Wire.h>
-#else
-    #include <MFRC522DriverPinSimple.h>
-    #include <MFRC522DriverSPI.h>
-#endif
+#include "sensor.hpp"
+#include <MFRC522DriverI2C.h>
+#include <Wire.h>
 
 #include "NdefMessage.h"
 #include "NfcAdapter.h"
@@ -26,31 +22,12 @@
 #include "nfc_input.h"
 #include "i2cio.hpp"
 #include "broker.hpp"
-
 #include "fmicro.h"
 
 using StatusCode = MFRC522Constants::StatusCode;
-static MFRC522::MIFARE_Key key = {{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}};
 
-#ifdef NFC_USE_I2C
-const uint8_t customAddress = 0x28;
-MFRC522DriverI2C driver{customAddress, NFC_WIRE}; // Create I2C driver.
-
-#else
-MFRC522DriverPinSimple
-ss_pin(SS_PIN);       // Create pin driver. See typical pin layout above.
-SPIClass &spiClass = SPI; // Alternative SPI e.g. SPI2 or from library e.g. softwarespi.
-const SPISettings spiSettings = SPISettings(SPI_CLOCK_DIV4, MSBFIRST,
-                                SPI_MODE0); // May have to be set if hardware is not fully
-// compatible to Arduino specifications.
-MFRC522DriverSPI driver{ss_pin, spiClass, spiSettings}; // Create SPI driver.
-#endif
-
-bool nfc_reader_present;
-static bool mfrc522_initialized = false;
-
-static MFRC522Extended mfrc522{driver}; // Create MFRC522 instance.
-static NfcAdapter nfc = NfcAdapter(&mfrc522);
+extern nfc_reader_t nfcconf;
+static bwTagType_t analyseTag(NfcTag &tag, JsonDocument &doc);
 
 static const char *ruuvi_ids[] = {
     "\002idID: ",
@@ -59,7 +36,70 @@ static const char *ruuvi_ids[] = {
     "\002dt",
 };
 
-bwTagType_t
+void nfc_setup(void) {
+    if (!nfcconf.driver_instantiated) {
+        nfcconf.driver = new MFRC522DriverI2C{nfcconf.dev.i2caddr, *nfcconf.wire};
+        nfcconf.mfrc522 = new MFRC522Extended{*nfcconf.driver};
+        nfcconf.nfc = new NfcAdapter(nfcconf.mfrc522);
+        nfcconf.key = new MFRC522::MIFARE_Key{{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}};
+        log_i("NFC driver instantiated");
+        // nfcconf.dev.device_present = detect(*nfcconf.wire, nfcconf.dev.i2caddr);
+        nfcconf.driver_instantiated = true;
+    }
+}
+
+bool nfc_reader_present(void) {
+    return  (nfcconf.dev.device_initialized && nfcconf.dev.device_present);
+}
+
+void nfc_loop(void) {
+    post_softirq(&nfcconf);
+}
+
+void nfc_poll(void) {
+    nfcconf.dev.device_present = detect(*nfcconf.wire, nfcconf.dev.i2caddr);
+    if (nfcconf.dev.device_present ^ nfcconf.dev.device_initialized) {
+        if (nfcconf.dev.device_present) {
+            // just plugged in
+            nfcconf.mfrc522->PCD_Init();  // causes useless Wire.begin()
+            nfcconf.nfc->begin();
+            nfcconf.nfc->setMifareKey(nfcconf.key);
+
+            MFRC522::PCD_Version version = nfcconf.mfrc522->PCD_GetVersion();
+            log_i("RFID reader detected, firmware version: 0x%x", version);
+            mqtt.publish("nfc/reader", "1");
+            nfcconf.dev.device_initialized = true;
+        } else {
+            mqtt.publish("nfc/reader", "0");
+            if (nfcconf.dev.device_initialized)
+                log_e("RFID reader was unplugged");
+            nfcconf.dev.device_initialized = false;
+            return;
+        }
+    }
+    if (nfcconf.dev.device_initialized && nfcconf.dev.device_present) {
+        if (nfcconf.nfc->tagPresent()) {
+            log_i("Reading NFC tag");
+            NfcTag tag = nfcconf.nfc->read();
+
+            JsonDocument jsondoc;
+            bwTagType_t type = analyseTag(tag, jsondoc);
+            jsondoc["um"] = type;
+            jsondoc["time"] = fseconds();
+            log_i("analyseTag=%d", type);
+
+            tag.tagToJson(jsondoc);
+            auto publish = mqtt.begin_publish("nfc/tag", measureJson(jsondoc));
+            serializeJson(jsondoc, publish);
+            publish.send();
+
+            nfcconf.nfc->haltTag();
+            nfcconf.nfc->setMifareKey(nfcconf.key);
+        }
+    }
+}
+
+static bwTagType_t
 analyseTag(NfcTag &tag, JsonDocument &doc) {
     if (!tag.hasNdefMessage()) {
         return BWTAG_NO_MATCH;
@@ -84,7 +124,6 @@ analyseTag(NfcTag &tag, JsonDocument &doc) {
                         }
                         content[i] = String(record.getPayload() + prefix_len,
                                             record.getPayloadLength() - prefix_len);
-
                     }
                     // if we made it here, it's a Ruuvi tag
                     auto ruuvi = doc["payload"].to<JsonObject>();
@@ -100,7 +139,6 @@ analyseTag(NfcTag &tag, JsonDocument &doc) {
         case MFRC522Constants::PICC_TYPE_MIFARE_4K:
         case MFRC522Constants::PICC_TYPE_MIFARE_1K:
         case MFRC522Constants::PICC_TYPE_MIFARE_UL: {
-
                 for (auto i = 0; i < nrec; i++) {
                     NdefRecord record = tag.getNdefMessage()[i];
 
@@ -111,7 +149,6 @@ analyseTag(NfcTag &tag, JsonDocument &doc) {
                         // this is for us. Payload is a JSON string.
                         String payload = String(record.getPayload(),
                                                 record.getPayloadLength());
-
                         JsonDocument t;
                         DeserializationError e = deserializeJson(t, payload);
                         if (e == DeserializationError::Ok) {
@@ -119,93 +156,24 @@ analyseTag(NfcTag &tag, JsonDocument &doc) {
                             return BWTAG_PROXY_TAG;
                         }
                         const char *p = payload.c_str();
-                        Serial.printf("deserialisation failed: %s, '%s'\n",
-                                      e.c_str(), p ? p : "NULL" );
+                        log_e("deserialisation failed: %s, '%s'\n",
+                              e.c_str(), p ? p : "NULL" );
                         return BWTAG_NO_MATCH;
                     }
                 }
             }
             break;
-
         default:
             ;
     }
     return BWTAG_NO_MATCH;
 }
 
-void nfc_setup(void) {
-#ifdef NFC_NEEDS_LVGL_LOCK
-    lvgl_acquire();
-#endif
-    mqtt.publish("nfc/reader", "0");
-#ifdef NFC_USE_I2C
-    // #ifdef I2C0_SDA
-    //     Wire.begin(I2C0_SDA, I2C0_SCL, I2C0_SPEED);
-    // #else
-    //     Wire.begin();
-    // #endif
-#else
-    SPI.begin(SCK_PIN, MISO_PIN, MOSI_PIN, SS_PIN);
-#endif
-#ifdef NFC_NEEDS_LVGL_LOCK
-    lvgl_release();
-#endif
-}
-
-void nfc_loop(void) {
-    nfc_reader_present = i2c_probe(NFC_WIRE, customAddress);
-
-    if (nfc_reader_present ^ mfrc522_initialized) {
-        if (nfc_reader_present) {
-            // just plugged in
-            log_e("RFID reader detected");
-            mqtt.publish("nfc/reader", "1");
-
-            mfrc522.PCD_Init();  // causes useless Wire.begin()
-            nfc.begin();
-            nfc.setMifareKey(&key);
-            MFRC522Debug::PCD_DumpVersionToSerial(
-                mfrc522, Serial); // Show version of PCD - MFRC522 Card Reader.
-            mfrc522_initialized = true;
-        } else {
-            mqtt.publish("nfc/reader", "0");
-            if (mfrc522_initialized)
-                log_e("RFID reader was unplugged");
-            mfrc522_initialized = false;
-            return;
-        }
-    }
-    if (mfrc522_initialized) {
-        if (nfc.tagPresent()) {
-            Serial.println("\nReading NFC tag");
-            NfcTag tag = nfc.read();
-
-            JsonDocument jsondoc;
-            bwTagType_t type = analyseTag(tag, jsondoc);
-            jsondoc["um"] = type;
-            // sendUiMessage(jsondoc);
-
-            jsondoc["time"] = fseconds();
-            auto publish = mqtt.begin_publish("nfc/tag", measureJson(jsondoc));
-            serializeJson(jsondoc, publish);
-            publish.send();
-
-            Serial.printf("analyseTag=%d\n", type);
-            if (type != BWTAG_NO_MATCH) {
-                serializeJsonPretty(jsondoc, Serial);
-            }
-            jsondoc.clear();
-
-            tag.tagToJson(jsondoc);
-            serializeJsonPretty (jsondoc, Serial);
-            jsondoc.clear();
-            nfc.haltTag();
-            nfc.setMifareKey(&key);
-        }
-    }
-    // delay(10);
-}
 #else
 void nfc_setup(void) {}
 void nfc_loop(void) {}
+void nfc_poll(void) {}
+bool nfc_reader_present(void) {
+    return false;
+}
 #endif

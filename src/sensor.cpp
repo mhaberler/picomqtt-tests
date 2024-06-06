@@ -17,9 +17,13 @@
 TICKER(gps, GPS_INTERVAL);
 TICKER(stats, STATS_INTERVAL);
 TICKER(ble, BLE_INTERVAL);
+TICKER(nfc, NFC_INTERVAL);
 
 void stats_loop(void);
 void stats_setup(void);
+void nfc_setup(void);
+void nfc_loop(void);
+void nfc_poll(void);
 
 void sensor_loop(void) {
     process_measurements();
@@ -27,6 +31,10 @@ void sensor_loop(void) {
     if (TIME_FOR(gps)) {
         ublox_loop();
         DONE_WITH(gps);
+    }
+    if (TIME_FOR(nfc)) {
+        nfc_loop();
+        DONE_WITH(nfc);
     }
     if (TIME_FOR(ble)) {
         process_ble();
@@ -43,6 +51,7 @@ void sensor_setup(void) {
     setup_ble();
     RUNTICKER(ble);
 #endif
+
     for (auto i = 0; i < num_dps_sensors; i++) {
         int n = 3;
         int16_t ret;
@@ -68,6 +77,10 @@ void sensor_setup(void) {
     if (imu_setup(&imu_sensor)) {
         log_i("imu initialized");
     }
+#endif
+#ifdef NFC_SUPPORT
+    nfc_setup();
+    RUNTICKER(nfc);
 #endif
     stats_setup();
     RUNTICKER(stats);

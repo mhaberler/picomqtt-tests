@@ -33,8 +33,7 @@ void webserver_loop(void);
 void sensor_setup(void);
 void sensor_loop(void);
 void irq_setup(void);
-void nfc_setup(void);
-void nfc_loop(void);
+bool nfc_reader_present(void);
 
 ::WiFiServer mqtt_tcp_server(MQTT_TCP);
 ::WiFiServer mqtt_ws_server(MQTT_WS);
@@ -50,7 +49,7 @@ void setup() {
     delay(3000);
 #ifdef M5UNIFIED
     auto cfg = M5.config();
-    // cfg.output_power = true;
+    cfg.output_power = true;
     M5.begin(cfg);
 #endif
     Serial.begin(115200);
@@ -106,6 +105,7 @@ void setup() {
     i2c_scan(Wire);
     i2c_scan(Wire1);
 #endif
+    irq_setup_queues();
     settings_setup();
     webserver_setup();
 
@@ -113,10 +113,10 @@ void setup() {
     dem_setup(SD, "/dem");
     printDems();
 #endif
-    irq_setup();
     sensor_setup();
-    nfc_setup();
 
+    // no softirq I2C i/o up to here
+    irq_run_softirq_task();
     mqtt.begin();
 
     mqtt.subscribe("system/interval", [](const char * topic, const char * payload) {
@@ -139,6 +139,7 @@ void setup() {
         int16_t ret = dps368_setup(n);
         log_i("reinit %d: %d", n, ret);
     });
+
     RUNTICKER(internal);
     RUNTICKER(deadman);
 }
@@ -148,37 +149,40 @@ void loop() {
     mqtt.loop();
     webserver_loop();
     sensor_loop();
-    nfc_loop();
+
 
     if (TIME_FOR(internal)) {
         mqtt.publish("system/interval", String(internal_update_ms));
         mqtt.publish("system/free-heap", String(ESP.getFreeHeap()));
         mqtt.publish("system/reboot", "0");
         mqtt.publish("baro/reinit", "-1");
+#ifdef NFC_SUPPORT
+        mqtt.publish("nfc/reader", String(nfc_reader_present()));
+#endif
 #ifdef DEM_SUPPORT
         publishDems();
 #endif
-#ifdef M5UNIFIED
-        JsonDocument json;
-        json["time"] = fseconds();
-        json["level"] = M5.Power.getBatteryLevel();
-        json["status"] = (int) M5.Power.isCharging();
+#ifdef M5UNIFIED 
+        // JsonDocument json;
+        // json["time"] = fseconds();
+        // json["level"] = M5.Power.getBatteryLevel();
+        // json["status"] = (int) M5.Power.isCharging();
 
-        switch (M5.Power.isCharging()) {
-            case m5::Power_Class::is_discharging:
-                json["text"]  = "discharging";
-                break;
-            case m5::Power_Class::is_charging:
-                json["text"]  = "charging";
-                break;
-            case m5::Power_Class::charge_unknown:
-                json["text"]  = "unknown";
-                break;
-        }
+        // switch (M5.Power.isCharging()) {
+        //     case m5::Power_Class::is_discharging:
+        //         json["text"]  = "discharging";
+        //         break;
+        //     case m5::Power_Class::is_charging:
+        //         json["text"]  = "charging";
+        //         break;
+        //     case m5::Power_Class::charge_unknown:
+        //         json["text"]  = "unknown";
+        //         break;
+        // }
 
-        auto publish = mqtt.begin_publish("system/battery", measureJson(json));
-        serializeJson(json, publish);
-        publish.send();
+        // auto publish = mqtt.begin_publish("system/battery", measureJson(json));
+        // serializeJson(json, publish);
+        // publish.send();
 #endif
         settings_tick();
 

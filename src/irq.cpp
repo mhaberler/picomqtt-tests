@@ -6,8 +6,10 @@
 #include "broker.hpp"
 #include "tickers.hpp"
 #include "fmicro.h"
+#include "pindefs.h"
 
 void ublox_poll(const void *dev);
+void nfc_poll(void);
 
 QueueHandle_t irq_queue;
 espidf::RingBuffer *measurements_queue;
@@ -27,10 +29,13 @@ uint32_t irq_queue_full, measurements_queue_full, commit_fail;
 bool dps368_irq(dps_sensors_t * dev, const float &timestamp);
 bool icm20948_irq(icm20948_t *dev, const float &timestamp);
 
-void irq_setup(void) {
+void irq_setup_queues(void) {
     irq_queue = xQueueCreate(IRQ_QUEUELEN, sizeof(irqmsg_t));
     measurements_queue = new espidf::RingBuffer();
     measurements_queue->create(MEASMT_QUEUELEN, RINGBUF_TYPE_NOSPLIT);
+}
+
+void irq_run_softirq_task(void) {
     xTaskCreatePinnedToCore(soft_irq, "soft_irq", SOFTIRQ_STACKSIZE, NULL,
                             SOFTIRQ_PRIORITY, &softirq_task, 1);
 }
@@ -85,11 +90,17 @@ void soft_irq(void* arg) {
                     break;
                 case DEV_NEO_M9N:
 #ifdef UBLOX_SUPPORT
-
                     ublox_poll(gd);
 #endif
                     break;
-                case DEV_BATTERY:
+
+                case DEV_MFRC522:
+                    TOGGLE(TRIGGER2);
+                    nfc_poll();
+                    TOGGLE(TRIGGER2);
+                    break;
+
+                case DEV_BATTERY: // FIXME read M5 battery status here!
                     break;
                 case DEV_MICROPHONE:
                     break;

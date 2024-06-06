@@ -127,5 +127,5 @@ nfc_reader_t nfcconf = {
         .topic = "nfc"
     },
     .wire = &NFC_WIRE,
-    // .icm = &icm,
+    .driver_instantiated = false
 };
