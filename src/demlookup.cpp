@@ -8,7 +8,7 @@
 
 #include <stdlib.h>
 #include <SPI.h>
-#include <FS.h>
+
 #include "SD.h"
 #include "math.h"
 #include "Esp.h"
@@ -17,23 +17,56 @@
 
 static demInfo_t *di;
 
-void dem_setup(void) {
+int32_t dem_setup(fs::FS& fs, const String &dirName) {
+    int32_t n_dems = 0;
     int rc;
     double lat,lon,ref;
     locInfo_t li = {};
     TIMESTAMP(now);
 
-    rc = addDEM(TEST_DEM, &di);
-    if (rc != 0) {
-        log_e("addDEM fail: %d\n", rc);
-    } else {
-        log_i("%s: zoom %d..%d resolution: %.2fm/pixel coverage %.2f/%.2f..%.2f/%.2f type %s",
-              di->path, di->header.min_zoom, di->header.max_zoom,
-              meters_per_pixel(di),
-              min_lat(di), min_lon(di),
-              max_lat(di), max_lon(di),
-              tileType(di->header.tile_type));
+    File root = fs.open(dirName.c_str(), "r");
+    if(!root) {
+        log_e("%s: failed to open directory", dirName.c_str());
+        return -1;
     }
+    if(!root.isDirectory()) {
+        log_e("%s: not a directory", dirName.c_str());
+        return -1;
+    }
+    File file = root.openNextFile();
+    while(file) {
+
+        if (!file.isDirectory()) {
+            String fn(file.name());
+            if (fn.startsWith("._")) {
+                file = root.openNextFile();
+                continue;
+            }
+            if (!fn.endsWith(".pmtiles")) {
+                file = root.openNextFile();
+                continue;
+            }
+            String path =  SD.mountpoint() + dirName + "/" + fn;
+            log_i("adding DEM %s \t(%d bytes)",path.c_str(), file.size());
+
+            rc = addDEM(path.c_str(), &di);
+            if (rc != 0) {
+                log_e("addDEM fail: %d\n", rc);
+            } else {
+                log_i("%s: zoom %d..%d resolution: %.2fm/pixel coverage %.2f/%.2f..%.2f/%.2f type %s",
+                      di->path, di->header.min_zoom, di->header.max_zoom,
+                      meters_per_pixel(di),
+                      min_lat(di), min_lon(di),
+                      max_lat(di), max_lon(di),
+                      tileType(di->header.tile_type));
+                n_dems++;
+            }
+        }
+        file = root.openNextFile();
+    }
+
+    return n_dems;
+
 #ifdef DEM_TEST
     lat = 47.12925176802318;
     lon = 15.209778656353123;

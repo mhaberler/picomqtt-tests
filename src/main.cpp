@@ -13,6 +13,7 @@
 #include "tickers.hpp"
 #include "i2cio.hpp"
 #ifdef DEM_SUPPORT
+    #include "SD.h"
     #include "demlookup.hpp"
 #endif
 #include "sensor.hpp"
@@ -107,7 +108,8 @@ void setup() {
     webserver_setup();
 
 #ifdef DEM_SUPPORT
-    dem_setup();
+    dem_setup(SD, "/dem");
+    printDems();
 #endif
     irq_setup();
     sensor_setup();

@@ -115,7 +115,8 @@ int addDEM(const char *path, demInfo_t **demInfo) {
     }
     di->tile_size = TILESIZE; // FIXME
     di->path = strdup(path);  // FIXME
-
+    di->index = dbindex++;
+    
     dems.push_back(di);
     if (demInfo != NULL) {
         *demInfo = di;
@@ -156,12 +157,12 @@ void printDems(void) {
 }
 
 void publishDems(void) {
-    JsonDocument json;
-    json["time"] = micros() * 1.0e-6;
-    JsonArray array = json.as<JsonArray>();
+    JsonDocument json, dem;
+    // json["time"] = micros() * 1.0e-6;
+    JsonArray array = json.to<JsonArray>();
 
     for (auto d: dems) {
-        JsonObject dem = json.as<JsonObject>();
+       dem.clear();
 
         dem["path"] = d->path;
         dem["min_lat"] = min_lat(d);
