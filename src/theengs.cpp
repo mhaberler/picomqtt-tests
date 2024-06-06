@@ -73,7 +73,7 @@ class scanCallbacks: public  NimBLEScanCallbacks {
                 BLEdata["servicedatauuid"] = (char*)serviceDatauuid.c_str();
             }
         }
-        BLEdata["arrived"] = fseconds();
+        BLEdata["time"] = fseconds();
         void *ble_adv = nullptr;
         size_t total = measureMsgPack(BLEdata);
         if (bleadv_queue->send_acquire((void **)&ble_adv, total, 0) != pdTRUE) {

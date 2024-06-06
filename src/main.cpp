@@ -33,6 +33,8 @@ void webserver_loop(void);
 void sensor_setup(void);
 void sensor_loop(void);
 void irq_setup(void);
+void nfc_setup(void);
+void nfc_loop(void);
 
 ::WiFiServer mqtt_tcp_server(MQTT_TCP);
 ::WiFiServer mqtt_ws_server(MQTT_WS);
@@ -113,6 +115,7 @@ void setup() {
 #endif
     irq_setup();
     sensor_setup();
+    nfc_setup();
 
     mqtt.begin();
 
@@ -145,6 +148,7 @@ void loop() {
     mqtt.loop();
     webserver_loop();
     sensor_loop();
+    nfc_loop();
 
     if (TIME_FOR(internal)) {
         mqtt.publish("system/interval", String(internal_update_ms));
