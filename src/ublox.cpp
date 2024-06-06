@@ -129,8 +129,10 @@ bool ublox_setup(void) {
 
     if (detect(Wire, UBLOX_I2C_ADDR)) {
         gpsconf.wire = &Wire;
+        gpsconf.dev.device_present = true;
     } else if (detect(Wire1, UBLOX_I2C_ADDR)) {
         gpsconf.wire = &Wire1;
+        gpsconf.dev.device_present = true;
     } else {
         log_e("no ublox device found");
         gpsconf.dev.device_initialized = false;

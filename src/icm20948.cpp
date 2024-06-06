@@ -67,7 +67,7 @@ bool icm20948_irq(icm20948_t *dev, const float &timestamp) {
 bool imu_setup(icm20948_t *dev) {
     ICM_20948_Status_e ret;
     if (detect(*dev->wire, dev->dev.i2caddr)) {
-
+        dev->dev.device_present = true;
         if (dev->dev.irq_attached) {
             log_e("%s: - detaching interrupt", dev->dev.topic);
             detachInterrupt(digitalPinToInterrupt(dev->dev.irq_pin));

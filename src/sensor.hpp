@@ -50,6 +50,7 @@ typedef struct  {
     uint8_t irq_pin_mode;
     uint8_t irq_pin_edge;
     bool irq_attached;
+    bool device_present;
     bool device_initialized;
     uint32_t init_count;
     uint32_t softirq_count;

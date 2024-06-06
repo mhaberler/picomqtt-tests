@@ -105,8 +105,10 @@ void soft_irq(void* arg) {
             float now = fseconds();
             for (auto i = 0; i < num_dps_sensors; i++) {
                 dps_sensors_t *d = &dps_sensors[i];
-                if (!d->dev.device_initialized)
+                if (!d->dev.device_present)
                     continue;
+                // if (!d->dev.device_initialized)
+                //     continue;
                 if (now - d->dev.last_heard > i2c_timeout) {
                     log_e("%s timeout (%f sec) - reinit", d->dev.topic, i2c_timeout.get());
                     // might publish a sensor fault message here
@@ -117,7 +119,9 @@ void soft_irq(void* arg) {
                     d->dev.last_heard = now; // leave some time till next kick
                 }
             }
-            if (imu_sensor.dev.device_initialized && (now - imu_sensor.dev.last_heard > i2c_timeout.get())) {
+            if (imu_sensor.dev.device_present &&
+                    !imu_sensor.dev.device_initialized &&
+                    (now - imu_sensor.dev.last_heard > i2c_timeout.get())) {
                 log_e("%s timeout (%f sec) - reinit", imu_sensor.dev.topic, i2c_timeout.get());
                 imu_setup(&imu_sensor);
                 imu_sensor.dev.last_heard = now; // leave some time till next kick

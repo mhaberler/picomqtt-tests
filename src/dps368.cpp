@@ -107,6 +107,7 @@ int16_t dps368_setup(int i) {
         dev->dev.device_initialized = false;
         return DPS__DEVICE_NOT_RESPONDING;
     }
+    dev->dev.device_present = true;
     log_e("%s: init #%d", dev->dev.topic, dev->dev.init_count);
 
     dps368_deconfigure("setup", dev);
