@@ -6,4 +6,11 @@
 nodejs/node_modules
 untracked
 # data/myhelloiot
-
+mermaid
+cache
+built-in-webpages/setup/build_setup/node_modules
+data-web/imu3d-experimental/node_modules/
+data-web/imu3d-experimental/dist
+data
+.pioenvs
+.piolibdeps

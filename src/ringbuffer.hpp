@@ -1,3 +1,4 @@
+
 #ifndef ESP_PLATFORM
     #error "ring buffer is part of esp-idf FreeRTOS supplemental feature"
 #else
@@ -30,6 +31,10 @@ class RingBuffer {
 
     size_t max_item_size() const {
         return xRingbufferGetMaxItemSize(h);
+    }
+
+    size_t curr_free_size() const {
+        return xRingbufferGetCurFreeSize(h);
     }
 
     BaseType_t send(void* pvItem, size_t xItemSize, TickType_t xTicksToWait) {

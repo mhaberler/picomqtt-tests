@@ -5,37 +5,35 @@
 #include "RunningStats.hpp"
 #include "i2cio.hpp"
 #include "stats.hpp"
-#include "ublox.hpp"
-#include "protomap.hpp"
+#include "sensor.hpp"
 #include "broker.hpp"
+#include "params.hpp"
+#include "prefs.hpp"
+#include "tickers.hpp"
+#include <chrono>
+#include <ctime>
 
+extern gps_sensor_t gpsconf;
 
-SFE_UBLOX_GNSS myGNSS;
+PicoSettings gps_settings(mqtt, "gps");
 
-bool trace_ublox;
-bool ublox_present;
+#ifdef UBLOX_SUPPORT
 
+SFE_UBLOX_GNSS ublox_neo;
 static UBX_NAV_PVT_data_t ub_nav_pvt;
-uint32_t ublox_updated;
 
 const UBX_NAV_PVT_data_t &get_ublox_navdata(void) {
     return ub_nav_pvt;
 }
-uint32_t pps_irqs, extint_irqs,  prev_pps_irqs, prev_extint_irqs;
 
 void
 ublox_nav_pvt (UBX_NAV_PVT_data_t *ub) {
     ub_nav_pvt = *ub;
-    ublox_updated = millis();
-    // if (ub_nav_pvt.fixType)
-    //     LV_LOG_USER("fix %u", ub_nav_pvt.fixType);
-
+    std::tm timeinfo = {};
 
     JsonDocument json;
-    json["us"] = micros();
-    json["fixType"] =ub_nav_pvt.fixType;
-
-
+    json["time"] = micros() * 1.0e-6;
+    json["fixType"] = ub_nav_pvt.fixType;
 
     switch (ub_nav_pvt.fixType) {
         case 4:
@@ -73,69 +71,89 @@ ublox_nav_pvt (UBX_NAV_PVT_data_t *ub) {
                 json["year"] = ub_nav_pvt.year;
                 json["month"] = ub_nav_pvt.month;
                 json["day"] = ub_nav_pvt.day;
+                timeinfo.tm_year = ub_nav_pvt.year - 1900;
+                timeinfo.tm_mon = ub_nav_pvt.month - 1;
+                timeinfo.tm_mday = ub_nav_pvt.day;
             }
             if (ub_nav_pvt.valid.bits.validTime) {
                 json["hour"] = ub_nav_pvt.hour;
                 json["min"] = ub_nav_pvt.min;
                 json["sec"] = ub_nav_pvt.sec;
+                timeinfo.tm_hour =  ub_nav_pvt.hour;
+                timeinfo.tm_min = ub_nav_pvt.min;
+                timeinfo.tm_sec = ub_nav_pvt.sec;
+                timeinfo.tm_isdst = -1;
+                if (ub_nav_pvt.valid.bits.validDate) {
+                    std::time_t epoch_time = std::mktime(&timeinfo);
+                    json["epoch"] = epoch_time; // Unix epoch, sec since 1-1-1970 UTC
+                }
             }
+
             if (ub_nav_pvt.valid.bits.validMag) {
                 json["magDec"] = ub_nav_pvt.magDec;
             }
     }
-    auto publish = mqtt.begin_publish("gps", measureJson(json));
+    auto publish = mqtt.begin_publish("gps/nav", measureJson(json));
     serializeJson(json, publish);
     publish.send();
 }
 
 void ublox_loop(void) {
-    // if (ublox_present) {
-
-    myGNSS.checkUblox();
-    myGNSS.checkCallbacks();
-    // }
-    // if (pps_irqs != prev_pps_irqs) {
-    //     Serial.printf("PPS %u\n",pps_irqs);
-    //     prev_pps_irqs = pps_irqs;
-    // }
-    // if (extint_irqs != prev_extint_irqs) {
-    //     Serial.printf("EXTINT %u\n",extint_irqs);
-    //     prev_extint_irqs = extint_irqs;
-    // }
+    if (gpsconf.dev.device_initialized) {
+        post_softirq(&gpsconf);
+    }
 }
 
-
-// void onPPS() {
-//     // toggleTpin();
-//     pps_irqs += 1;
-// }
-
-// void onINT() {
-//     // toggleTpin();
-
-//     extint_irqs += 1;
-// }
+void ublox_poll(const void *dev) {
+    // if (dev->dev.device_initialized) {
+    if (gpsconf.dev.device_initialized) {
+        ublox_neo.checkUblox();
+        ublox_neo.checkCallbacks();
+    }
+}
 
 bool ublox_setup(void) {
 
-    // int16_t ppsIRQpin = 2;
-    // pinMode(ppsIRQpin, INPUT);
-    // attachInterrupt(digitalPinToInterrupt(ppsIRQpin), onPPS, RISING);
-
-    // int16_t IRQpin = 7;
-    // pinMode(IRQpin, INPUT);
-    // attachInterrupt(digitalPinToInterrupt(IRQpin), onINT, RISING);
-
-    if (detect(Wire, 0x42)) {
-
-        myGNSS.begin(Wire, 0x42, 300, true);
-        // myGNSS.clearAntPIO();
-        // myGNSS.enableDebugging(Serial, trace_ublox);
-        myGNSS.setNavigationFrequency(NAV_FREQUENCY);
-        myGNSS.setAutoPVTcallbackPtr(&ublox_nav_pvt);
-        log_i("ublox initialized");
-        return true;
+    if (detect(Wire, UBLOX_I2C_ADDR)) {
+        gpsconf.wire = &Wire;
+    } else if (detect(Wire1, UBLOX_I2C_ADDR)) {
+        gpsconf.wire = &Wire1;
+    } else {
+        log_e("no ublox device found");
+        gpsconf.dev.device_initialized = false;
+        return false;
     }
-    return false;
+    ublox_neo.begin(*gpsconf.wire, gpsconf.dev.i2caddr, 300, true);
+    if (gpsconf.trace) {
+        ublox_neo.enableDebugging(Serial, gpsconf.trace);
+    }
+    ublox_neo.setNavigationFrequency(gpsconf.navFreq);
+    ublox_neo.setAutoPVTcallbackPtr(&ublox_nav_pvt);
+    log_i("ublox initialized 0x%x at Wire%u",
+          UBLOX_I2C_ADDR, (gpsconf.wire == &Wire) ? 0: 1);
+    gpsconf.dev.device_initialized = true;
+    return true;
 }
 
+EXT_TICKER(gps);
+int_setting_t nav_rate(gps_settings, "nav_rate", 1, [] {
+    if (gpsconf.dev.device_initialized) {
+        if (nav_rate <= 0) {
+            log_i("gps sampling stopped");
+            STOPTICKER(gps);
+        } else {
+            uint32_t period = 1000/nav_rate;
+            log_i("gps sampling set to %u mS", period);
+            CHANGE_TICKER(gps, period);
+            ublox_neo.setNavigationFrequency(nav_rate);
+        }
+    }
+});
+
+
+#else
+bool ublox_setup() {
+    return false;
+}
+void ublox_loop(void) {}
+#endif

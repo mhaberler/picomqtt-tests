@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Quaternion 3D Test</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .topnav {
+            background-color: #1dbcbf;
+            text-align: center;
+            padding: 14px 16px;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #container {
+            position: absolute;
+            /* touch-action: none; */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="topnav">
+        <label id="refpos">Reference position:</label>
+        <button id="setref" onclick="setReferencePostion()"> Set reference position</button>
+        <label>Apply: <input type="checkbox" onclick="applyCorrection()" id="applycorr"></label>
+        <label id="heading"></label>
+    </div>
+
+    <div id="container" touch-action="none">
+    </div>
+
+    <script type="module">
+        import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js";
+        import * as mqtt from "https://unpkg.com/mqtt/dist/mqtt.min.js";
+
+        var camera, scene, renderer;
+        var geometry, material, mesh;
+        var correct = false;
+        var setRef = false;
+        var refPos = new THREE.Quaternion(0, 0, 0, 1);
+        // refPos.identity();
+
+        const container = document.querySelector('#container');
+        const refpos = document.querySelector('#refpos');
+        refpos.textContent = qtext("Reference", refPos);
+
+        const heading = document.querySelector('#heading');
+
+        function qtext(text, q) {
+            return `${text}: ${q.x} ${q.y} ${q.z} ${q.w}`;
+        }
+
+        function init() {
+            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 10);
+            camera.position.z = 1;
+
+            scene = new THREE.Scene();
+
+            geometry = new THREE.BoxGeometry(0.8, 0.4, 0.05);
+            material = new THREE.MeshNormalMaterial();
+
+            mesh = new THREE.Mesh(geometry, material);
+            scene.add(mesh);
+
+            axisHelper = new THREE.AxisHelper(0.1);
+            var localToCameraAxesPlacement = new THREE.Vector3(0.45 * camera.aspect, -0.45, -2); // make sure to update this on window resize
+            scene.add(axisHelper);
+
+
+            renderer = new THREE.WebGLRenderer({
+                antialias: true
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+            container.append(renderer.domElement);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        function mqtt_setup() {
+            const clientId = 'mqttjs_' + Math.random().toString(16).substr(2, 8)
+            // const host = 'ws://' + location.host + ':81';
+            const host = 'ws://' + 'sensorbox.local' + ':81';
+            const options = {
+                keepalive: 60,
+                clientId: clientId,
+                protocolId: 'MQTT',
+                protocolVersion: 4,
+                clean: true,
+                reconnectPeriod: 1000,
+                connectTimeout: 30 * 1000,
+            }
+            console.log('Connecting mqtt client');
+            const client = mqtt.connect(host, options)
+            client.on('error', (err) => {
+                console.log('Connection error: ', err)
+                client.end()
+            })
+            client.on('reconnect', () => {
+                console.log('Reconnecting...')
+            })
+            client.on('connect', () => {
+                console.log(`Client connected: ${clientId}`)
+                client.subscribe('imu/quat9', { qos: 0 })
+                client.subscribe('imu/hdg', { qos: 0 })
+            })
+            client.on('message', (topic, message, packet) => {
+                var jsonObj = JSON.parse(message.toString());
+                if (topic === 'imu/quat9') {
+                    // var targetQuaternion = new THREE.Quaternion(jsonObj.z, jsonObj.y, jsonObj.w, jsonObj.x);
+                    var targetQuaternion = new THREE.Quaternion(jsonObj.x, jsonObj.y, jsonObj.z, jsonObj.w);
+                    if (setRef) {
+                        refPos = targetQuaternion.clone().conjugate();
+                        setRef = false;
+                        refpos.textContent = qtext("Reference", targetQuaternion);
+                    }
+                    if (correct) {
+                        mesh.quaternion.slerp(targetQuaternion.multiply(refPos), 1);
+                    } else {
+                        mesh.quaternion.slerp(targetQuaternion, 1);
+                    }
+                }
+                if (topic === 'imu/hdg') {
+                    heading.textContent = "Heading: " + message + "°";
+                }
+            })
+        }
+        init();
+        mqtt_setup();
+        animate();
+
+        function setReferencePostion() {
+            console.log("setReferencePostion");
+            setRef = true;
+        }
+
+        function applyCorrection() {
+            correct = document.getElementById("applycorr").checked;
+        }
+    </script>
+</body>
+
+</html>

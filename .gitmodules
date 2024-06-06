@@ -13,3 +13,33 @@
 [submodule "zlib"]
 	path = zlib
 	url = https://github.com/madler/zlib.git
+[submodule "lib/arduino-xensiv-dps3xx"]
+	path = lib/arduino-xensiv-dps3xx
+	url = https://github.com/mhaberler/arduino-xensiv-dps3xx.git
+[submodule "data-web/myhelloiot"]
+	path = data-web/myhelloiot
+	url = https://github.com/mhaberler/myhelloiot.git
+[submodule "lib/PicoSettings"]
+	path = lib/PicoSettings
+	url = https://github.com/mhaberler/PicoSettings.git
+[submodule "data-web/MQTTX"]
+	path = data-web/MQTTX
+	url = https://github.com/mhaberler/MQTTX.git
+[submodule "data-web/device-orientation"]
+	path = data-web/device-orientation
+	url = https://github.com/mhaberler/device-orientation.git
+[submodule "data-web/teleplot"]
+	path = data-web/teleplot
+	url = https://github.com/mhaberler/teleplot.git
+[submodule "lib/ESP32SSDP"]
+	path = lib/ESP32SSDP
+	url = https://github.com/mhaberler/ESP32SSDP.git
+[submodule "data-web/Vue-Mqtt-Example"]
+	path = data-web/Vue-Mqtt-Example
+	url = https://github.com/mhaberler/Vue-Mqtt-Example.git
+[submodule "data-web/vue-paho-mqtt"]
+	path = data-web/vue-paho-mqtt
+	url = https://github.com/kaandesu/vue-paho-mqtt.git
+[submodule "data-web/mqtt-client-vue3-vite-ts"]
+	path = data-web/mqtt-client-vue3-vite-ts
+	url = https://github.com/aliafsahnoudeh/mqtt-client-vue3-vite-ts.git

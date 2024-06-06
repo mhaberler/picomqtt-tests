@@ -11,7 +11,7 @@
 void stats_loop(void) {
 #ifdef STATS
     JsonDocument json;
-    json["tick"] = micros();
+    json["time"] = micros() * 1.0e-6;
     json["mean"] = alt_stats.Mean();
     json["stddev"] = alt_stats.StandardDeviation();
     json["ci95"] = alt_stats.ConfidenceInterval(CI95);

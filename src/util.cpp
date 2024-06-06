@@ -18,7 +18,7 @@ const String bleTopic(const NimBLEAddress &mac) {
     buffer.reserve(32);
     const uint8_t* m_address = mac.getNative();
     buffer = "ble/";
-    for (auto i = 5; i != 0; i--) {
+    for (int i = 5; i > -1; i--) {
         buffer += String(m_address[i], HEX);
     }
     return buffer;
