@@ -1,5 +1,6 @@
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -10,6 +11,7 @@
 #include <stdarg.h>
 #include <math.h>
 #include <string_view>
+#include "broker.hpp"
 
 #include "buffer_ref.h"
 
@@ -143,14 +145,39 @@ void printCache(void) {
 void printDems(void) {
     for (auto d: dems) {
         log_i("dem %u: %s coverage %.2f/%.2f..%.2f/%.2f tile_decode_err=%lu protomap_err=%lu hits=%lu misses=%lu tilesize=%u type %s",
-                 d->index, d->path,
-                 min_lat(d), min_lon(d),
-                 max_lat(d), max_lon(d),
-                 d->tile_decode_errors,
-                 d->protomap_errors,
-                 d->cache_hits, d->cache_misses, d->tile_size,
-                 tileType(d->header.tile_type));
+              d->index, d->path,
+              min_lat(d), min_lon(d),
+              max_lat(d), max_lon(d),
+              d->tile_decode_errors,
+              d->protomap_errors,
+              d->cache_hits, d->cache_misses, d->tile_size,
+              tileType(d->header.tile_type));
     }
+}
+
+void publishDems(void) {
+    JsonDocument json;
+    json["time"] = micros() * 1.0e-6;
+    JsonArray array = json.as<JsonArray>();
+
+    for (auto d: dems) {
+        JsonObject dem = json.as<JsonObject>();
+
+        dem["path"] = d->path;
+        dem["min_lat"] = min_lat(d);
+        dem["min_lon"] = min_lon(d);
+        dem["max_lat"] = max_lat(d);
+        dem["max_lon"] = max_lon(d);
+        dem["decode_errors"] =  d->tile_decode_errors;
+        dem["protomap_errors"] =  d->protomap_errors;
+        dem["cache_hits"] =  d->cache_hits;
+        dem["cache_misses"] =  d->cache_misses;
+        dem["tile_type"] =  tileType(d->header.tile_type);
+        array.add(dem);
+    }
+    auto publish = mqtt.begin_publish("dem/models", measureJson(json));
+    serializeJson(json, publish);
+    publish.send();
 }
 
 static void freeTile(tile_t *tile) {
@@ -276,7 +303,7 @@ bool lookupTile(demInfo_t &di, locInfo_t *locinfo, double lat, double lon) {
                         int fed = pngle_feed(pngle, blob, blob_size);
                         if (fed != blob_size) {
                             log_e("%s: decode failed: decoded %d out of %u: %s",
-                                      keyStr(key.key).c_str(), fed, blob_size, pngle_error(pngle));
+                                  keyStr(key.key).c_str(), fed, blob_size, pngle_error(pngle));
                             freeTile(tile);
                             tile = NULL;
                             di.tile_decode_errors++;
@@ -286,7 +313,7 @@ bool lookupTile(demInfo_t &di, locInfo_t *locinfo, double lat, double lon) {
                             if (hdr->compression) {
                                 locinfo->status = LS_PNG_COMPRESSED;
                                 log_e("%s: compressed PNG tile",
-                                          keyStr(key.key).c_str());
+                                      keyStr(key.key).c_str());
                             } else {
                                 di.tile_size = pngle_get_width(pngle);
                                 tile = (tile_t *) pngle_get_user_data(pngle);

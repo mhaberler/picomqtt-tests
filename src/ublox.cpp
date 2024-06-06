@@ -12,6 +12,10 @@
 #include "tickers.hpp"
 #include <chrono>
 #include <ctime>
+#ifdef DEM_SUPPORT
+    #include "demlookup.hpp"
+    #include "protomap.hpp"
+#endif
 
 extern gps_sensor_t gpsconf;
 
@@ -30,7 +34,11 @@ void
 ublox_nav_pvt (UBX_NAV_PVT_data_t *ub) {
     ub_nav_pvt = *ub;
     std::tm timeinfo = {};
-
+#ifdef DEM_SUPPORT
+    locInfo_t li = {};
+    double ele;
+    int rc = LS_INVALID;
+#endif
     JsonDocument json;
     json["time"] = micros() * 1.0e-6;
     json["fixType"] = ub_nav_pvt.fixType;
@@ -56,12 +64,8 @@ ublox_nav_pvt (UBX_NAV_PVT_data_t *ub) {
                 json["lat"] = lat;
                 json["lon"] = lon;
 #ifdef DEM_SUPPORT
-                locInfo_t li = {};
-                double ele;
-                int rc = getLocInfo(lat, lon, &li);
-                if (li.status == LS_VALID) {
-                    json["ele"] = li.elevation;
-                }
+                rc = getLocInfo(lat, lon, &li);
+
 #endif
             }
             __attribute__ ((fallthrough));
@@ -88,7 +92,6 @@ ublox_nav_pvt (UBX_NAV_PVT_data_t *ub) {
                     json["epoch"] = epoch_time; // Unix epoch, sec since 1-1-1970 UTC
                 }
             }
-
             if (ub_nav_pvt.valid.bits.validMag) {
                 json["magDec"] = ub_nav_pvt.magDec;
             }
@@ -96,6 +99,16 @@ ublox_nav_pvt (UBX_NAV_PVT_data_t *ub) {
     auto publish = mqtt.begin_publish("gps/nav", measureJson(json));
     serializeJson(json, publish);
     publish.send();
+    if (li.status == LS_VALID) {
+        json.clear();
+        json["time"] = micros() * 1.0e-6;
+        json["meters"] = li.elevation;
+        json["lat"] = ub_nav_pvt.lat * 1e-7;
+        json["lon"] = ub_nav_pvt.lon * 1e-7;
+        auto dempublish = mqtt.begin_publish("dem/elevation", measureJson(json));
+        serializeJson(json, dempublish);
+        dempublish.send();
+    }
 }
 
 void ublox_loop(void) {

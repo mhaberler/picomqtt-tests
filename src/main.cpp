@@ -12,7 +12,7 @@
 #include <ESPmDNS.h>
 #include "tickers.hpp"
 #include "i2cio.hpp"
-#ifdef DEMLOOKUP
+#ifdef DEM_SUPPORT
     #include "demlookup.hpp"
 #endif
 #include "sensor.hpp"
@@ -104,11 +104,11 @@ void setup() {
     i2c_scan(Wire1);
 #endif
     settings_setup();
+    webserver_setup();
 
 #ifdef DEM_SUPPORT
     dem_setup();
 #endif
-    webserver_setup();
     irq_setup();
     sensor_setup();
 
@@ -149,7 +149,9 @@ void loop() {
         mqtt.publish("system/free-heap", String(ESP.getFreeHeap()));
         mqtt.publish("system/reboot", "0");
         mqtt.publish("baro/reinit", "-1");
-
+#ifdef DEM_SUPPORT
+        publishDems();
+#endif
 #ifdef M5UNIFIED
         JsonDocument json;
         json["time"] = fseconds();

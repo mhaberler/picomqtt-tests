@@ -144,6 +144,7 @@ static inline double meters_per_pixel(const demInfo_t *d) {
 int addDEM(const char *path, demInfo_t **demInfo = NULL);
 int getLocInfo(double lat, double lon, locInfo_t *locinfo);
 void printCache(void);
+void publishDems(void);
 void printDems(void);
 const char *tileType(uint8_t tile_type);
 string string_format(const string fmt, ...);
