@@ -10,9 +10,6 @@
 [submodule "lib/arduino-xensiv-dps3xx"]
 	path = lib/arduino-xensiv-dps3xx
 	url = https://github.com/mhaberler/arduino-xensiv-dps3xx.git
-[submodule "data-web/myhelloiot"]
-	path = data-web/myhelloiot
-	url = https://github.com/mhaberler/myhelloiot.git
 [submodule "lib/PicoSettings"]
 	path = lib/PicoSettings
 	url = https://github.com/mhaberler/PicoSettings.git
@@ -37,3 +34,6 @@
 [submodule "data-web/mqtt-client-vue3-vite-ts"]
 	path = data-web/mqtt-client-vue3-vite-ts
 	url = https://github.com/aliafsahnoudeh/mqtt-client-vue3-vite-ts.git
+[submodule "data-web/myhelloiot"]
+	path = data-web/myhelloiot
+	url = https://github.com/adrianromero/myhelloiot.git
