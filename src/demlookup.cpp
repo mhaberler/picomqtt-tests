@@ -1,8 +1,8 @@
 
-#ifdef DEVKITC
-    #include <Arduino.h>
-#else
+#ifdef M5UNIFIED
     #include <M5Unified.h>
+#else
+    #include <Arduino.h>
 #endif
 #include <esp_task_wdt.h>
 
