@@ -1,10 +1,64 @@
-# picomqtt-websockets example
+# MQTT Sensorbox
+The purpose of this device is to:
 
-this repo is for exploring and testing the PicoMQTT/PicoWebsockets.
+- publish values of attached sensors via MQTT-over-Websockets and MQTT-over-TCP
+- typical sensors would be barometric pressure, an IMU (accelerometer/gyro/magnetometer), and a GPS device
+- provide optional postprocessing of sensor data 
+- run an embedded MQTT broker with Websockets adapter
+- publish advertisement-based BLE sensor reports as supported by the [Theengs library](https://github.com/theengs/decoder)
+- run an embedded webserver to host and serve web applications
+- read NFC tags, and publish their contents via MQTT for application use
+- provide surface elevation given a geographic coordinate, via accessing digital elevation models stored on an SD card
+- offer a way to manage and edit files stored in an embedded filesystem via a web browser
+- export configuration values as MQTT topics backed by non-volatile storage for persistence
+- provide a web configuration portal to set WiFi credentials, upload files to the  embedded filesystem and update the firmware
+- run completely isolated without any Internet connectivcity
+
+A typical use case would be Sensorbox connecting to a mobile's WiFi hotspot and offer its services to the mobile and other Wifi clients of the mobile's WiFi hotspot.
 
 
-## test results
-the following clients were successfully tested against PicoMQTT/PicoWebsockets:
+## Supported protocols and features
+
+- HTTP service on port 80
+- MQTT-over-Websockets 
+- MQTT-over-TCP
+- Host(.local) and service announcements via mDNS and [SSDP](https://github.com/luc-github/ESP32SSDP#2.0.0) (aka "Universal Plug and Play")
+- configuration via NVS-persistent topics - see [PicoSettings](https://github.com/mhaberler/PicoSettings)
+- NFC reader support including Type 4 tags, like the Ruuvi Sensor - see repos https://github.com/mhaberler/NDEF https://github.com/mhaberler/Arduino_MFRC522v2 
+- Digital Elevation Models in pmtiles format, see [this project](https://github.com/mhaberler/embedded-protomaps) for hints to generate your own
+
+
+## Platform and Supported Hardware
+
+- ESP32S3 (preferrably with PSRAM) and sufficient flash memory for the embedded filesystem (LittleFS)
+- ESP32C3
+- DPS368 barometric pressure sensors, via I2C, interrupt-driven
+- ICM20948 IMU, via I2C, interrupt-driven
+- GPS: Ublox models M9N M8P M8Q F9P, via I2C
+- any BLE sensor supported by [Theengs](https://decoder.theengs.io/devices/devices.html)
+
+## Embedded applications (part of the repo)
+
+- a localized version of [MyhelloIOT](https://github.com/adrianromero/myhelloiot)
+- the web version of the [MQTTX MQTT browser](https://github.com/emqx/MQTTX)
+- [device-orientation](https://github.com/mhaberler/device-orientation): a simple threejs 3D application to visualize the IMU orientation
+
+
+## Limitations
+
+- no SSL support 
+- assumed to run in a trusted environment
+
+## Parts used 
+- [PicoMQTT](https://github.com/mlesniew/PicoMQTT)  and [PicoWebsockets](https://github.com/mlesniew/PicoWebsocket) by Michał Leśniewski
+- [PicoSettings](https://github.com/mhaberler/PicoSettings) by myself
+- [esp-fs-webserver](https://github.com/cotestatnt/esp-fs-webserver) by Tolentino Cotesta
+- [Theengs decopder](https://github.com/theengs/decoder) from the [OpenMQTT Gateway](https://docs.openmqttgateway.com/) project
+- [ArduinoJson](https://arduinojson.org/) by  Benoît Blanchon
+- an embedded version of [PMTiles](https://github.com/protomaps/PMTiles) by, and with the help of Brandon Liu
+
+## Client Test Results
+the following clients were successfully tested against PicoMQTT/PicoWebsockets and should work with SenorBox:
 
 ### MQTT-Websockets
 - Sensor-Logger Android 1.31.4 build 3145890 
