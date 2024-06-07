@@ -14,6 +14,9 @@ void battery_check(void) {
         json["time"] = fseconds();
         json["level"] = M5.Power.getBatteryLevel();
         json["status"] = (int) M5.Power.isCharging();
+        // these values report nonsense with M5Unified 1.16
+        // json["mV"] = (int) M5.Power.getBatteryVoltage();
+        // json["mA"] = (int) M5.Power.getBatteryCurrent();
 
         switch (M5.Power.isCharging()) {
             case m5::Power_Class::is_discharging:

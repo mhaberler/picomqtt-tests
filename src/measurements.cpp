@@ -162,6 +162,9 @@ void process_imu( const imuSample_t &is) {
 void process_gps( const gpsSample_t &gs) {
     const UBX_NAV_PVT_data_t &ub_nav_pvt = gs.nav_data;
     std::tm timeinfo = {};
+#ifdef PICOMQTT_WORKAROUND
+    static String buffer(4096);
+#endif
 #ifdef DEM_SUPPORT
     locInfo_t li = {};
     double ele;
@@ -193,7 +196,6 @@ void process_gps( const gpsSample_t &gs) {
                 json["lon"] = lon;
 #ifdef DEM_SUPPORT
                 rc = getLocInfo(lat, lon, &li);
-
 #endif
             }
             __attribute__ ((fallthrough));
@@ -224,20 +226,29 @@ void process_gps( const gpsSample_t &gs) {
                 json["magDec"] = ub_nav_pvt.magDec;
             }
     }
+#ifdef PICOMQTT_WORKAROUND
+    serializeJson(json, buffer);
+    mqtt.publish("gps/nav", buffer);
+#else
     auto publish = mqtt.begin_publish("gps/nav", measureJson(json));
     serializeJson(json, publish);
     publish.send();
-
-    // if (li.status == LS_VALID) {
-    //     json.clear();
-    //     json["time"] = micros() * 1.0e-6;
-    //     json["meters"] = li.elevation;
-    //     json["lat"] = ub_nav_pvt.lat * 1e-7;
-    //     json["lon"] = ub_nav_pvt.lon * 1e-7;
-    //     auto dempublish = mqtt.begin_publish("dem/elevation", measureJson(json));
-    //     serializeJson(json, dempublish);
-    //     dempublish.send();
-    // }
+#endif
+    if (li.status == LS_VALID) {
+        json.clear();
+        json["time"] = micros() * 1.0e-6;
+        json["meters"] = li.elevation;
+        json["lat"] = ub_nav_pvt.lat * 1e-7;
+        json["lon"] = ub_nav_pvt.lon * 1e-7;
+#ifdef PICOMQTT_WORKAROUND
+        serializeJson(json, buffer);
+        mqtt.publish("dem/elevation", buffer);
+#else
+        auto dempublish = mqtt.begin_publish("dem/elevation", measureJson(json));
+        serializeJson(json, dempublish);
+        dempublish.send();
+#endif
+    }
 }
 
 
