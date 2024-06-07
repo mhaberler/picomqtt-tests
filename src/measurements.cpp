@@ -300,6 +300,6 @@ void process_measurements(void) {
                 log_e("invalid sample type %d size %u", gd->type, sz);
                 measurements_queue->return_item(p);
         }
-        // yield();
+        yield();
     }
 }
