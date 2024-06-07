@@ -129,3 +129,10 @@ nfc_reader_t nfcconf = {
     .wire = &NFC_WIRE,
     .driver_instantiated = false
 };
+
+battery_status_t battery_conf = {
+    .dev = {
+        .type = DEV_BATTERY,
+        .topic = "battery"
+    }
+};

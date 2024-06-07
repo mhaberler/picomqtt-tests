@@ -116,6 +116,10 @@ typedef struct  {
 } nfc_reader_t;
 
 typedef struct  {
+    i2c_gendev_t dev;
+} battery_status_t;
+
+typedef struct  {
     dps_sensors_t *dev;
     sample_t type;
     float timestamp;   // sec

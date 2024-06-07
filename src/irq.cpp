@@ -10,6 +10,7 @@
 
 void ublox_poll(const void *dev);
 void nfc_poll(void);
+void battery_check(void);
 
 QueueHandle_t irq_queue;
 espidf::RingBuffer *measurements_queue;
@@ -100,8 +101,10 @@ void soft_irq(void* arg) {
                     TOGGLE(TRIGGER2);
                     break;
 
-                case DEV_BATTERY: // FIXME read M5 battery status here!
+                case DEV_BATTERY:
+                    battery_check();
                     break;
+                    
                 case DEV_MICROPHONE:
                     break;
             }

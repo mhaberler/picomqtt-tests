@@ -43,6 +43,7 @@ PicoMQTT::Server mqtt(mqtt_tcp_server, websocket_server);
 TICKER(internal, INTERVAL);
 TICKER(deadman, DEADMAN_INTERVAL);
 
+extern battery_status_t battery_conf;
 
 void setup() {
 
@@ -50,7 +51,14 @@ void setup() {
 #ifdef M5UNIFIED
     auto cfg = M5.config();
     cfg.output_power = true;
+    cfg.led_brightness = 128;
+    cfg.clear_display = true;
     M5.begin(cfg);
+    M5.Display.init();
+
+    M5.Display.qrcode("http://sensorbox.local/apps/myhelloiot/", 1, 1, 320, 240);
+    M5.update();
+    battery_conf.dev.device_present = true;
 #endif
     Serial.begin(115200);
     // Serial.setDebugOutput(true);
@@ -150,7 +158,6 @@ void loop() {
     webserver_loop();
     sensor_loop();
 
-
     if (TIME_FOR(internal)) {
         mqtt.publish("system/interval", String(internal_update_ms));
         mqtt.publish("system/free-heap", String(ESP.getFreeHeap()));
@@ -162,28 +169,10 @@ void loop() {
 #ifdef DEM_SUPPORT
         publishDems();
 #endif
-#ifdef M5UNIFIED 
-        // JsonDocument json;
-        // json["time"] = fseconds();
-        // json["level"] = M5.Power.getBatteryLevel();
-        // json["status"] = (int) M5.Power.isCharging();
+        if (battery_conf.dev.device_present) {
+            post_softirq(&battery_conf);
+        }
 
-        // switch (M5.Power.isCharging()) {
-        //     case m5::Power_Class::is_discharging:
-        //         json["text"]  = "discharging";
-        //         break;
-        //     case m5::Power_Class::is_charging:
-        //         json["text"]  = "charging";
-        //         break;
-        //     case m5::Power_Class::charge_unknown:
-        //         json["text"]  = "unknown";
-        //         break;
-        // }
-
-        // auto publish = mqtt.begin_publish("system/battery", measureJson(json));
-        // serializeJson(json, publish);
-        // publish.send();
-#endif
         settings_tick();
 
         DONE_WITH(internal);
