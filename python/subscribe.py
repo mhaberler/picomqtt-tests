@@ -47,6 +47,8 @@ def on_connect(mqttc, obj, flags, reason_code, properties):
 def on_message(client, userdata, msg):
     print(msg.topic + " " + str(msg.payload))
 
+def on_disconnect(client, one, two, three, four):
+    print(f"disconnect: {one} {two} {three} {four} ")
 
 mqtt_listener = MQTTBrokerListener()
 
@@ -70,6 +72,8 @@ client = mqtt.Client(
 client.enable_logger()
 client.on_connect = on_connect
 client.on_message = on_message
+client.on_disconnect = on_disconnect
+
 client.connect(broker["ip"], broker["port"], 60)
 
 client.loop_forever()
