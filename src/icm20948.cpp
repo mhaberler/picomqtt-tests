@@ -156,66 +156,6 @@ FAILED:
     return false;
 }
 
-void process_imu( const imuSample_t &is) {
-
-    if ((is.data.header & DMP_header_bitmap_Quat9) > 0) {
-        double x = ((double)is.data.Quat9.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
-        double y = ((double)is.data.Quat9.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
-        double z = ((double)is.data.Quat9.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
-        double w = sqrt(1.0 - ((x * x) + (y * y) + (z * z)));
-        if (!isnan(w)) {
-            JsonDocument json;
-            json["time"] = is.timestamp *1.0e-6;
-            json["ref"] = apply_reference_correction.get();
-            if (set_reference_correction) {
-                // store as conjugate of current quaternion
-                ref_x = -x;
-                ref_y = -y;
-                ref_z = -z;
-                ref_w = w;
-                log_d("refpos %f %f %f %f", ref_x, ref_y, ref_z, ref_w);
-                set_reference_correction = false;
-            }
-            // apply mounting position correction
-            // https://invensense.tdk.com/wp-content/uploads/2024/03/eMD_Software_Guide_ICM20948.pdf
-            // page 10
-            if (apply_reference_correction) {
-                double out_w = ref_w*w - ref_x*x - ref_y*y - ref_z*z;
-                double out_x = ref_w*x + ref_x*w + ref_y*z - ref_z*y;
-                double out_y = ref_w*y + ref_y*w + ref_z*x - ref_x*z;
-                double out_z = ref_w*z + ref_z*w + ref_x*y - ref_y*x;
-                // Normalize
-                float tmp = sqrtf(out_w*out_w + out_x*out_x + out_y*out_y + out_z*out_z);
-                if (tmp > 0 ) {
-                    out_w /= tmp;
-                    out_x /= tmp;
-                    out_y /= tmp;
-                    out_z /= tmp;
-                }
-                json["w"] = out_w;
-                json["x"] = out_x;
-                json["y"] = out_y;
-                json["z"] = out_z;
-            } else {
-                json["w"] = w;
-                json["x"] = x;
-                json["y"] = y;
-                json["z"] = z;
-            }
-            double hdg = atan2(2*x*y + 2*z*w, 1 - 2*y*y - 2*z*z)*(180.0/PI);
-            hdg += heading_correction;
-            if(hdg < 0) hdg = 360 + hdg;
-            float deg = lround((360 - hdg)*10.0)/10.0;
-            json["hdg"] = deg;
-            json["heading_correction"] = heading_correction.get();
-
-            auto hdg_publish = mqtt.begin_publish("imu/orientation", measureJson(json));
-            serializeJson(json, hdg_publish);
-            hdg_publish.send();
-        }
-    }
-
-}
 
 
 // Combine all of the DMP start-up code from the earlier DMP examples

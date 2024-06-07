@@ -159,7 +159,7 @@ void sensor_setup(void);
 
 void ublox_loop(void);
 bool ublox_setup(void);
-
+void ublox_trigger_read(void);
 void set_hdg_corr(double degrees);
 bool imu_setup(icm20948_t *imu_sensor );
 void imu_loop(void);

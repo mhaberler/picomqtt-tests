@@ -29,7 +29,8 @@ void sensor_loop(void) {
     process_measurements();
 
     if (TIME_FOR(gps)) {
-        ublox_loop();
+        ublox_trigger_read();
+
         DONE_WITH(gps);
     }
     if (TIME_FOR(nfc)) {

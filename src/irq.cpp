@@ -8,7 +8,7 @@
 #include "fmicro.h"
 #include "pindefs.h"
 
-void ublox_poll(const void *dev);
+void ublox_read(const void *dev);
 void nfc_poll(void);
 void battery_check(void);
 
@@ -91,7 +91,7 @@ void soft_irq(void* arg) {
                     break;
                 case DEV_NEO_M9N:
 #ifdef UBLOX_SUPPORT
-                    ublox_poll(gd);
+                    ublox_read(gd);
 #endif
                     break;
 
