@@ -5,8 +5,8 @@
 #define FILESYSTEM LittleFS
 #if ESP_FS_WS_USE_SD
     #include <SD.h>
-    #include "pindefs.h"
 #endif
+#include "pindefs.h"
 #define DBG_OUTPUT_PORT     Serial
 #define LOG_LEVEL           2         // (0 disable, 1 error, 2 info, 3 debug)
 #include "SerialLog.h"
@@ -118,7 +118,7 @@ void getFsInfo(fsInfo_t* fsInfo) {
 
 void webserver_setup() {
 
-   RGBLED(0,64,64);
+    RGBLED(0,64,64);
 #if ESP_FS_WS_USE_SD
     SPI.begin(SPI0_CLOCK, SPI0_MISO, SPI0_MOSI);
     if (SD_INSERTED > -1) {

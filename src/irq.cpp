@@ -36,9 +36,15 @@ void irq_setup_queues(void) {
     measurements_queue->create(MEASMT_QUEUELEN, RINGBUF_TYPE_NOSPLIT);
 }
 
-void irq_run_softirq_task(void) {
-    xTaskCreatePinnedToCore(soft_irq, "soft_irq", SOFTIRQ_STACKSIZE, NULL,
+BaseType_t irq_run_softirq_task(void) {
+#ifdef CONFIG_FREERTOS_UNICORE
+    return xTaskCreate(soft_irq, "soft_irq", SOFTIRQ_STACKSIZE, NULL,
+                SOFTIRQ_PRIORITY, &softirq_task);
+#else
+    return xTaskCreatePinnedToCore(soft_irq, "soft_irq", SOFTIRQ_STACKSIZE, NULL,
                             SOFTIRQ_PRIORITY, &softirq_task, 1);
+#endif
+
 }
 
 // first level interrupt handler
@@ -104,7 +110,7 @@ void soft_irq(void* arg) {
                 case DEV_BATTERY:
                     battery_check();
                     break;
-                    
+
                 case DEV_MICROPHONE:
                     break;
             }

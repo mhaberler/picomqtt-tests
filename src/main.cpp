@@ -52,13 +52,15 @@ void setup() {
     auto cfg = M5.config();
     cfg.output_power = true;
     cfg.led_brightness = 128;
-    cfg.clear_display = true;
-    M5.begin(cfg);
-    M5.Display.init();
+    // cfg.clear_display = true;
+    // M5.begin(cfg);
+    // M5.Display.init();
 
-    M5.Display.qrcode("http://sensorbox.local/apps/myhelloiot/", 1, 1, 320, 240);
-    M5.update();
+    // M5.Display.qrcode("http://sensorbox.local/apps/myhelloiot/", 1, 1, 320, 240);
+    // M5.update();
+#ifndef ARDUINO_ESP32C3_DEV
     battery_conf.dev.device_present = true;
+#endif
 #endif
     Serial.begin(115200);
     // Serial.setDebugOutput(true);
@@ -92,26 +94,32 @@ void setup() {
     i2c_scan(Wire1);
 
 #endif
-#if defined(DEVKITC)
+#if defined(DEVKITC) || defined(M5STAMP_C3U)
 
     Wire.begin(I2C0_SDA, I2C0_SCL, I2C0_SPEED);
+#if defined(I2C1_SDA)
     Wire1.begin(I2C1_SDA, I2C1_SCL, I2C1_SPEED);
-
+#endif
+#if defined(DPS0_IRQ_PIN)
     pinMode(DPS0_IRQ_PIN, INPUT_PULLUP);
+#endif
+#if defined(DPS1_IRQ_PIN)
     pinMode(DPS1_IRQ_PIN, INPUT);
+#endif
+#if defined(DPS2_IRQ_PIN)
     pinMode(DPS2_IRQ_PIN, INPUT_PULLUP);
+#endif
+#if defined(IMU_IRQ_PIN)
     pinMode(IMU_IRQ_PIN, INPUT_PULLUP);
-
+#endif
+#if defined(TRACE_PINS)
     pinMode(TRIGGER1, OUTPUT);
     pinMode(TRIGGER2, OUTPUT);
-
-    // digitalWrite(TRIGGER1, 1);
-    // digitalWrite(TRIGGER1, 0);
-    // digitalWrite(TRIGGER2, 1);
-    // digitalWrite(TRIGGER2, 0);
-
+#endif
     i2c_scan(Wire);
+#if defined(I2C1_SDA)
     i2c_scan(Wire1);
+#endif
 #endif
     irq_setup_queues();
     settings_setup();
@@ -122,9 +130,12 @@ void setup() {
     printDems();
 #endif
     sensor_setup();
-
-    // no softirq I2C i/o up to here
-    irq_run_softirq_task();
+    BaseType_t ret = irq_run_softirq_task();
+    if (ret != pdPASS) {
+        log_e("failed to create soft_irq task: %d", ret);
+    } else {
+        log_i("soft_irq task created");
+    }
     mqtt.begin();
 
     mqtt.subscribe("system/interval", [](const char * topic, const char * payload) {

@@ -1,3 +1,5 @@
+
+
 #if defined(DEVKITC)
 
 #define I2C0_SDA 7
@@ -60,6 +62,47 @@
 #define SPI0_MISO -1
 
 #endif
+
+
+#if defined(M5STAMP_C3U)
+#define I2C0_SDA 1
+#define I2C0_SCL 0
+#define I2C0_SPEED 400000
+
+// #define I2C1_SDA 19
+// #define I2C1_SCL 18
+// #define I2C1_SPEED 400000
+
+#define NEOPIXEL_LED 2
+
+
+// GPS - I2C1
+// #define UBLOX_PPS_PIN 4
+
+// IMU - I2C0
+//  top left edge downwards
+
+#define IMU_IRQ_PIN 3 //aussen
+
+// DPS368
+#define DPS0_IRQ_PIN 4
+
+
+// // SPI - SD Card
+// #define SPI0_CLOCK 14
+// #define SPI0_MOSI 12
+// #define SPI0_MISO 13
+// #define SPI0_SLAVE_SELECT_SDCARD 11
+
+// SD card
+#define SD_INSERTED -1
+#define SD_SPEED 40000000
+
+#define TRIGGER1 5
+#define TRIGGER2 6
+
+#endif
+
 
 #if defined(ARDUINO_M5STACK_Core2)
 // IMU - I2C0

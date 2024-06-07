@@ -359,7 +359,7 @@ IPAddress FSWebServer::startWiFi(uint32_t timeout, bool apFlag, CallbackF fn) {
         WiFi.begin(_ssid, _pass);
         uint32_t startTime = millis();
         log_info("Connecting to '%s'", _ssid);
-            RGBLED(64,64,0);
+        RGBLED(64,64,0);
 
         while ((WiFi.status() != WL_CONNECTED) && (timeout > 0)) {
             // execute callback function during wifi connection
@@ -372,7 +372,7 @@ IPAddress FSWebServer::startWiFi(uint32_t timeout, bool apFlag, CallbackF fn) {
                 break;
         }
         RGBLED(0,0,64);
-        
+
         // Configure and start MDNS responder
 #if defined(ESP8266)
         if (!MDNS.begin(m_host)) {
@@ -745,6 +745,7 @@ bool FSWebServer::handleFileRead(const char* uri) {
 
     // Check if requested file (or gzipped version) exists
     String path = uri;
+#if ESP_FS_WS_USE_SD
     if (path.startsWith("/sd")) {
         String sdPath = path.substring(3);
         if (SD.exists(sdPath.c_str())) {
@@ -760,13 +761,16 @@ bool FSWebServer::handleFileRead(const char* uri) {
             }
         }
     } else {
+#endif
         if (!m_filesystem->exists(path)) {
             path += ".gz";
             if (!m_filesystem->exists(path))
                 return false;
         }
         file = m_filesystem->open(path, "r");
+#if ESP_FS_WS_USE_SD
     }
+#endif
     const char* contentType = getContentType(path.c_str());
     if (this->streamFile(file, contentType) != file.size()) {
         log_debug("Sent less data than expected!");
