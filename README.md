@@ -16,6 +16,22 @@ The purpose of this device is to:
 
 A typical use case would be Sensorbox connecting to a mobile's WiFi hotspot and offer its services to the mobile and other Wifi clients of the mobile's WiFi hotspot.
 
+## Usage Overview
+````mermaid
+
+graph LR
+
+sensors["sensors"] --publish--> broker
+broker["MQTT\nbroker"] <--publish\nsubscribe\nMQTT-websockets--> clients
+webserver <--HTTP--> clients["Web \nclients "]
+
+littlefs[("web apps+\nassets\nLittleFS")] <--> webserver
+flash[("web apps+\nassets\nSD card")] <--> webserver
+
+
+mdns["Multicast\nDNS"] --server name\nannouncement--> clients
+
+````
 
 ## Supported protocols and features
 
@@ -27,6 +43,29 @@ A typical use case would be Sensorbox connecting to a mobile's WiFi hotspot and 
 - NFC reader support including Type 4 tags, like the Ruuvi Sensor - see repos https://github.com/mhaberler/NDEF https://github.com/mhaberler/Arduino_MFRC522v2 
 - Digital Elevation Models in pmtiles format, see [this project](https://github.com/mhaberler/embedded-protomaps) for hints to generate your own
 
+
+## Component Overview
+
+````mermaid
+graph LR
+    scanner["BLE\n scanner"] -- adv --> decoder["Theengs\n decoder"] --sensor\nvalues-->broker("MQTT\n broker")
+    baro["pressure\nsensors"] -- "pressure\nbarometric altitude" -->broker
+    baro --> Kalman\nestimate -- "vspeed\nvaccel" --> broker
+
+gps["GPS"] --"location\nGPS altitude\nheading\nspeed"--> broker
+gps--loc-->demlookup["elevation\nlookup"] --surface\nelevation-->broker
+gps--alt\nloc-->airspacelookup["airspace\nlookup"]--current\nairspace\nstack-->broker
+imu["inertial\nmeasurement\nunit"] --"spatial\norientation &\ncompass"-->broker
+nfc["NFC\nreader"] -- tag\ninfo -->broker
+nvs("Flash\nstorage")  <-->  persist["settings"] <--"operating parameters &\ncalibration"--> broker 
+
+dem[("elevation\nmodels")] -->demlookup
+
+airspace[("airspace\nshapes")]-->airspacelookup
+broker--websockets or\nTCP-->clients
+webserver["web\nserver"] <--HTTP--> clients["web clients\ndevices"]
+mdns["Multicast\nDNS"] --server\nname\nannouncement-->clients
+````
 
 ## Platform and Supported Hardware
 
@@ -43,6 +82,9 @@ A typical use case would be Sensorbox connecting to a mobile's WiFi hotspot and 
 - the web version of the [MQTTX MQTT browser](https://github.com/emqx/MQTTX)
 - [device-orientation](https://github.com/mhaberler/device-orientation): a simple threejs 3D application to visualize the IMU orientation
 
+## Implementation status
+
+all features except airspace lookup
 
 ## Limitations
 
@@ -56,6 +98,10 @@ A typical use case would be Sensorbox connecting to a mobile's WiFi hotspot and 
 - [Theengs decopder](https://github.com/theengs/decoder) from the [OpenMQTT Gateway](https://docs.openmqttgateway.com/) project
 - [ArduinoJson](https://arduinojson.org/) by  Benoît Blanchon
 - an embedded version of [PMTiles](https://github.com/protomaps/PMTiles) by, and with the help of Brandon Liu
+
+## Hardware setup
+
+todo
 
 ## Client Test Results
 the following clients were successfully tested against PicoMQTT/PicoWebsockets and should work with SenorBox:
