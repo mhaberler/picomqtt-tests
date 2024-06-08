@@ -28,11 +28,13 @@ void nfc_poll(void);
 void sensor_loop(void) {
     process_measurements();
 
+#ifdef UBLOX_SUPPORT
     if (TIME_FOR(gps)) {
         ublox_trigger_read();
 
         DONE_WITH(gps);
     }
+#endif
     if (TIME_FOR(nfc)) {
         nfc_loop();
         DONE_WITH(nfc);

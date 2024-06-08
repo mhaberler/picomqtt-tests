@@ -19,7 +19,7 @@ bool dps368_irq(dps_sensors_t * dev, const float &timestamp) {
 
     if ((ret = dev->sensor->getSingleResult(value)) != 0) {
         log_e("%s: getSingleResult: %d", dev->dev.topic, ret);
-        TOGGLE(TRIGGER1);
+        // TOGGLE(TRIGGER1);
         if (ret != DPS__SUCCEEDED) {
             if ((ret2 = dev->sensor->standby()) != DPS__SUCCEEDED) {
                 log_e("%s: standby: %d", dev->dev.topic, ret2);
@@ -30,7 +30,7 @@ bool dps368_irq(dps_sensors_t * dev, const float &timestamp) {
 
     if (((ret = dev->sensor->getIntStatusPrsReady()) < 0)) {
         log_e("%s: getIntStatusPrsReady: %d", dev->dev.topic, ret);
-        TOGGLE(TRIGGER1);
+        // TOGGLE(TRIGGER1);
         result = false;
     }
 
@@ -40,7 +40,7 @@ bool dps368_irq(dps_sensors_t * dev, const float &timestamp) {
         size_t sz = sizeof(baroSample_t);
         if (measurements_queue->send_acquire((void **)&bs, sz, 0) != pdTRUE) {
             measurements_queue_full++;
-            TOGGLE(TRIGGER2);
+            // TOGGLE(TRIGGER2);
         } else  {
             bs->dev = dev;
             bs->timestamp = timestamp;
@@ -64,13 +64,13 @@ bool dps368_irq(dps_sensors_t * dev, const float &timestamp) {
     if ((dev->dev.softirq_count & dev->temp_measure_mask)) {
         if ((ret = dev->sensor->startMeasurePressureOnce(dev->prs_osr)) != 0) {
             log_e("%s: startMeasurePressureOnce: %d", dev->dev.topic, ret);
-            TOGGLE(TRIGGER1);
+            // TOGGLE(TRIGGER1);
             return result;
         }
     } else {
         if ((ret = dev->sensor->startMeasureTempOnce(dev->temp_osr)) != 0) {
             log_e("%s: startMeasureTempOnce: %d", dev->dev.topic, ret);
-            TOGGLE(TRIGGER1);
+            // TOGGLE(TRIGGER1);
             return result;
         }
     }
@@ -129,7 +129,7 @@ int16_t dps368_setup(int i) {
     dev->sensor->begin(*dev->wire, dev->dev.i2caddr);
     delay(100);
     if ((ret = dev->sensor->standby()) != DPS__SUCCEEDED) {
-        TOGGLE(TRIGGER1);
+        // TOGGLE(TRIGGER1);
         log_e("%s: standby failed: %d", dev->dev.topic, ret);
         goto FAIL;
     }
@@ -143,7 +143,7 @@ int16_t dps368_setup(int i) {
     float temperature;
     if ((ret = dev->sensor->measureTempOnce(temperature, dev->temp_osr)) != 0) {
         log_e("%s: measureTempOnce failed ret=%d", dev->dev.topic, ret);
-        TOGGLE(TRIGGER1);
+        // TOGGLE(TRIGGER1);
         goto FAIL;
     } else {
         log_i("%s: compensating for %.2f°", dev->dev.topic, temperature);
@@ -151,7 +151,7 @@ int16_t dps368_setup(int i) {
 
     if ((ret = dev->sensor->standby()) != DPS__SUCCEEDED) {
         log_e("%s: standby2 failed: %d", dev->dev.topic, ret);
-        TOGGLE(TRIGGER1);
+        // TOGGLE(TRIGGER1);
         goto FAIL;
     }
 
@@ -172,7 +172,7 @@ int16_t dps368_setup(int i) {
     // interrupt will be posted at end of conversion
     if ((ret = dev->sensor->startMeasurePressureOnce(dev->prs_osr)) != 0) {
         log_e("%s: startMeasurePressureOnce: %d", dev->dev.topic, ret);
-        TOGGLE(TRIGGER1);
+        // TOGGLE(TRIGGER1);
         goto FAIL;
     }
     dev->dev.device_initialized = true;

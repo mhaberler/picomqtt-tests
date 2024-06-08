@@ -8,6 +8,7 @@
 #include "TimerStats.hpp"
 #include "ArduinoJson.h"
 #include "broker.hpp"
+#include "pindefs.h"
 #ifdef DEM_SUPPORT
     #include "demlookup.hpp"
     #include "protomap.hpp"
@@ -247,6 +248,7 @@ void process_gps( const gpsSample_t &gs) {
 
 
 void process_measurements(void) {
+    // TOGGLE(TRIGGER4);
 
     if (irq_queue_full || measurements_queue_full || commit_fail) {
         log_e("irq_queue_full=%d measurements_queue_full=%d commit_fail=%d",
@@ -261,7 +263,7 @@ void process_measurements(void) {
     size_t sz;
     void *p;
 
-    while ((p = measurements_queue->receive(&sz, 0)) != nullptr) {
+    if  ((p = measurements_queue->receive(&sz, 0)) != nullptr) {
         baroSample_t *bs = static_cast<baroSample_t *>(p);
         i2c_gendev_t *gd = &bs->dev->dev;
 
@@ -287,13 +289,13 @@ void process_measurements(void) {
             // case DEV_MFRC522: { // FIXME
 
             //     }
-            case DEV_NONE:
-                measurements_queue->return_item(p);
-                break;
+            // break;
             default:
                 log_e("invalid sample type %d size %u", gd->type, sz);
                 measurements_queue->return_item(p);
         }
-        yield();
+        // yield();
     }
+    // TOGGLE(TRIGGER4);
+
 }

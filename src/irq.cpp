@@ -7,6 +7,7 @@
 #include "tickers.hpp"
 #include "fmicro.h"
 #include "pindefs.h"
+#undef TRACE_PINS
 
 void ublox_read(const void *dev);
 void nfc_poll(void);
@@ -30,7 +31,7 @@ uint32_t irq_queue_full, measurements_queue_full, commit_fail;
 bool dps368_irq(dps_sensors_t * dev, const float &timestamp);
 bool icm20948_irq(icm20948_t *dev, const float &timestamp);
 
-void irq_setup_queues(void) {
+void setup_queues(void) {
     irq_queue = xQueueCreate(IRQ_QUEUELEN, sizeof(irqmsg_t));
     measurements_queue = new espidf::RingBuffer();
     measurements_queue->create(MEASMT_QUEUELEN, RINGBUF_TYPE_NOSPLIT);
@@ -39,10 +40,10 @@ void irq_setup_queues(void) {
 BaseType_t irq_run_softirq_task(void) {
 #ifdef CONFIG_FREERTOS_UNICORE
     return xTaskCreate(soft_irq, "soft_irq", SOFTIRQ_STACKSIZE, NULL,
-                SOFTIRQ_PRIORITY, &softirq_task);
+                       SOFTIRQ_PRIORITY, &softirq_task);
 #else
     return xTaskCreatePinnedToCore(soft_irq, "soft_irq", SOFTIRQ_STACKSIZE, NULL,
-                            SOFTIRQ_PRIORITY, &softirq_task, 1);
+                                   SOFTIRQ_PRIORITY, &softirq_task, 1);
 #endif
 
 }
@@ -51,6 +52,7 @@ BaseType_t irq_run_softirq_task(void) {
 // only notify 2nd level handler task passing any parameters
 // call only from interruot context
 void irq_handler(void *param) {
+    TOGGLE(TRIGGER1);
     irqmsg_t msg;
     msg.dev = param;
     msg.timestamp = fseconds();
@@ -59,11 +61,13 @@ void irq_handler(void *param) {
         // arduino-esp32 wont permit i2c i/o here
         irq_queue_full++;
     }
+    TOGGLE(TRIGGER1);
 }
 
 // post a soft irq to the handler queue/task
 // call only from userland context
 void post_softirq(void *dev) {
+    TOGGLE(TRIGGER1);
     irqmsg_t msg = {
         .timestamp = fseconds(),
         .dev = dev
@@ -71,6 +75,7 @@ void post_softirq(void *dev) {
     if (xQueueSend(irq_queue, (const void*) &msg, 0) != pdTRUE) {
         irq_queue_full++;
     }
+    TOGGLE(TRIGGER1);
 }
 
 // 2nd level interrupt handler
@@ -80,6 +85,8 @@ void soft_irq(void* arg) {
 
     for (;;) {
         while (xQueueReceive(irq_queue, &msg, 10 * portTICK_PERIOD_MS) == pdTRUE) {
+            TOGGLE(TRIGGER2);
+
             devhdr_t *dh = static_cast<devhdr_t *>(msg.dev);
             i2c_gendev_t *gd = &dh->dev;
             gd->last_heard = msg.timestamp;
@@ -118,6 +125,8 @@ void soft_irq(void* arg) {
                 break;
             }
         }
+        TOGGLE(TRIGGER2);
+
         yield();
 
         // check sensors being alive
@@ -150,6 +159,7 @@ void soft_irq(void* arg) {
         }
 
     }
+
 }
 
 

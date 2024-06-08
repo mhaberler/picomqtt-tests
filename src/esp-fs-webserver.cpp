@@ -115,12 +115,6 @@ void FSWebServer::begin(uint16_t port) {
         this->send(200, "text/xml", SSDP.getSchema());
     });
 #endif
-#if ESP_FS_WS_USE_SD
-    // serve static files from SD card
-    // if (sdcard_mounted) {
-    // this->serveStatic("/sd", SD, "/");
-    // }
-#endif
 
 #ifdef ESP32
     this->enableCrossOrigin(true);

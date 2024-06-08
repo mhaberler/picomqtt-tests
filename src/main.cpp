@@ -27,13 +27,16 @@
     #include "myconfig.h"
 #endif
 
-
+size_t getArduinoLoopTaskStackSize(void) {
+    return CUSTOM_ARDUINO_LOOP_STACK_SIZE;
+}
 void webserver_setup(void);
 void webserver_loop(void);
 void sensor_setup(void);
 void sensor_loop(void);
 void irq_setup(void);
 bool nfc_reader_present(void);
+void battery_check(void);
 
 ::WiFiServer mqtt_tcp_server(MQTT_TCP);
 ::WiFiServer mqtt_ws_server(MQTT_WS);
@@ -51,14 +54,14 @@ void setup() {
 #ifdef M5UNIFIED
     auto cfg = M5.config();
     cfg.output_power = true;
-    cfg.led_brightness = 128;
-    // cfg.clear_display = true;
-    // M5.begin(cfg);
-    // M5.Display.init();
+    cfg.internal_imu = false;
 
-    // M5.Display.qrcode("http://sensorbox.local/apps/myhelloiot/", 1, 1, 320, 240);
-    // M5.update();
-#ifndef ARDUINO_ESP32C3_DEV
+
+    cfg.internal_rtc = false;
+    cfg.internal_mic = false;
+    cfg.internal_spk = false;
+    M5.begin(cfg);
+#if defined(ARDUINO_M5STACK_CORES3) || defined(ARDUINO_M5STACK_Core2)
     battery_conf.dev.device_present = true;
 #endif
 #endif
@@ -73,7 +76,7 @@ void setup() {
     RGBLED(64,0,0);
 
 
-#if defined(ARDUINO_M5STACK_CORES3) ||  defined(ARDUINO_M5STACK_Core2)
+#if defined(ARDUINO_M5STACK_CORES3) ||  defined(ARDUINO_M5STACK_Core2) || defined(ARDUINO_M5Stack_StampS3)
     Wire.begin();
     Wire.setClock(I2C_400K);
     Wire1.begin();
@@ -87,8 +90,13 @@ void setup() {
 #if defined(DPS2_IRQ_PIN)
     pinMode(DPS2_IRQ_PIN, INPUT); // has external pulldown 33k
 #endif
-    pinMode(17, INPUT_PULLDOWN);
-    pinMode(18, INPUT_PULLDOWN);
+
+    // logic analyzer trace pins
+    TRIGGER_SETUP(TRIGGER1);
+    TRIGGER_SETUP(TRIGGER2);
+    TRIGGER_SETUP(TRIGGER3);
+    TRIGGER_SETUP(TRIGGER4);
+
     delay(10);
     i2c_scan(Wire);
     i2c_scan(Wire1);
@@ -113,15 +121,15 @@ void setup() {
     pinMode(IMU_IRQ_PIN, INPUT_PULLUP);
 #endif
 #if defined(TRACE_PINS)
-    pinMode(TRIGGER1, OUTPUT);
-    pinMode(TRIGGER2, OUTPUT);
+    TRIGGER_SETUP(TRIGGER1);
+    TRIGGER_SETUP(TRIGGER2);
 #endif
     i2c_scan(Wire);
 #if defined(I2C1_SDA)
     i2c_scan(Wire1);
 #endif
 #endif
-    irq_setup_queues();
+    setup_queues();
     settings_setup();
     webserver_setup();
 
@@ -165,10 +173,19 @@ void setup() {
 
 
 void loop() {
+    // TOGGLE(TRIGGER3);
     mqtt.loop();
-    webserver_loop();
-    sensor_loop();
+    // TOGGLE(TRIGGER3);
 
+    TOGGLE(TRIGGER1);
+    webserver_loop();
+    TOGGLE(TRIGGER1);
+
+    TOGGLE(TRIGGER2);
+    sensor_loop();
+    TOGGLE(TRIGGER2);
+
+#if 1
     if (TIME_FOR(internal)) {
         mqtt.publish("system/interval", String(internal_update_ms));
         mqtt.publish("system/free-heap", String(ESP.getFreeHeap()));
@@ -181,12 +198,15 @@ void loop() {
         publishDems();
 #endif
         if (battery_conf.dev.device_present) {
-            post_softirq(&battery_conf);
+            battery_check();
+        //    post_softirq(&battery_conf);
         }
-
         settings_tick();
-
         DONE_WITH(internal);
     }
+#endif
+#ifdef M5UNIFIED
+    // M5.update();
+#endif
     yield();
 }
