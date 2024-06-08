@@ -32,6 +32,11 @@
     #include <ESP32SSDP.h>
 #endif
 
+#ifndef ESP_FS_WS_USE_MDNS
+    #define ESP_FS_WS_USE_MDNS            1   // try to mount and serve the SD card
+#endif
+
+
 #if ESP_FS_WS_EDIT_HTM
     #include "edit_htm.h"
 #endif
@@ -62,7 +67,9 @@
     #include "esp_task_wdt.h"
     #include "sys/stat.h"
     #include <WiFi.h>
-    #include <ESPmDNS.h>
+    #if ESP_FS_WS_USE_MDNS
+        #include <ESPmDNS.h>
+    #endif
     #include <HTTPUpdateServer.h>
     #include <WebServer.h>
     using WebServerClass = WebServer;

@@ -214,7 +214,9 @@ void FSWebServer::run() {
         m_websocket->loop();
 #endif
 #if defined(ESP8266)
+#if ESP_FS_WS_USE_MDNS
     MDNS.update();
+#endif
 #endif
 
     yield();
@@ -368,12 +370,14 @@ IPAddress FSWebServer::startWiFi(uint32_t timeout, bool apFlag, CallbackF fn) {
         RGBLED(0,0,64);
 
         // Configure and start MDNS responder
+
 #if defined(ESP8266)
         if (!MDNS.begin(m_host)) {
             log_error("MDNS responder not started");
         }
         MDNS.addService("http", "tcp", m_port);
 #else
+#if ESP_FS_WS_USE_MDNS
         // Initialize mDNS
         ESP_ERROR_CHECK( mdns_init() );
         // Set mDNS hostname (required if you want to advertise services)
@@ -387,6 +391,7 @@ IPAddress FSWebServer::startWiFi(uint32_t timeout, bool apFlag, CallbackF fn) {
         ESP_ERROR_CHECK( mdns_service_add(HOSTNAME, "_http", "_tcp", HTTP_PORT, serviceTxtData, 1) );
         ESP_ERROR_CHECK( mdns_service_add(HOSTNAME, "_mqtt", "_tcp", MQTT_TCP, nullptr, 0) );
         ESP_ERROR_CHECK( mdns_service_add(HOSTNAME, "_mqtt-ws", "_tcp", MQTT_WS, nullptr, 0) );
+#endif
 #endif
 
         if ((WiFi.status() == WL_CONNECTED) || apFlag)
