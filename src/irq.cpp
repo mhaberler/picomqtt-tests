@@ -22,7 +22,7 @@ PicoSettings baro_settings(mqtt, "baro");
 
 // lost interrupts:
 // if we have not heard from a DPS3xx in i2c_timeout seconds, re-init device
-float_setting_t i2c_timeout(baro_settings, "i2c_timeout", 10.0);
+float_setting_t i2c_timeout(baro_settings, "i2c_timeout", 2.0);
 
 
 uint32_t irq_queue_full, measurements_queue_full, commit_fail;
