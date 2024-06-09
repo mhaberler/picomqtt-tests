@@ -7,9 +7,24 @@
 #include "broker.hpp"
 #include "util.hpp"
 #include "fmicro.h"
+#include "tickers.hpp"
 
 #include "NimBLEDevice.h"
 #include "decoder.h"
+
+// snarfed from OpenMQTT Gateway
+#ifndef BLEScanInterval
+    #define BLEScanInterval 52 // How often the scan occurs / switches channels; in milliseconds,
+#endif
+#ifndef BLEScanWindow
+    #define BLEScanWindow 30 // How long to scan during the interval; in milliseconds.
+#endif
+#ifndef Scan_duration
+    #define Scan_duration 10000 //define the duration for a scan; in milliseconds
+#endif
+#ifndef TimeBtwActive
+    #define TimeBtwActive 55555 //define default time between two BLE active scans when general passive scanning is selected; in milliseconds
+#endif
 
 #ifndef BLE_ADV_QUEUELEN
     #define BLE_ADV_QUEUELEN 2048
@@ -23,15 +38,12 @@
 
 static NimBLEScan* pBLEScan;
 static TheengsDecoder decoder;
-static uint32_t scanTime = 3600 * 1000; // In seconds, 0 = scan forever
 static espidf::RingBuffer *bleadv_queue;
 static uint32_t queue_full, acquire_fail;
 
-#ifdef NIMBLE_OLDAPI
-class scanCallbacks: public  BLEAdvertisedDeviceCallbacks {
-#else
+static TICKER(activeScan, TimeBtwActive);
+
 class scanCallbacks: public  NimBLEScanCallbacks {
-#endif
 
     std::string convertServiceData(std::string deviceServiceData) {
         int serviceDataLength = (int)deviceServiceData.length();
@@ -101,22 +113,17 @@ void setup_ble(void) {
     NimBLEDevice::init("");
 
     pBLEScan = NimBLEDevice::getScan(); //create new scan
-#ifdef NIMBLE_OLDAPI
-    pBLEScan->setAdvertisedDeviceCallbacks(new scanCallbacks());
-#else
     pBLEScan->setScanCallbacks(new scanCallbacks());
-#endif
     pBLEScan->setActiveScan(false); // Set active scanning, this will get more data from the advertiser.
-    pBLEScan->setInterval(97); // How often the scan occurs / switches channels; in milliseconds,
-    pBLEScan->setWindow(37);  // How long to scan during the interval; in milliseconds.
+    pBLEScan->setInterval(BLEScanInterval); // How often the scan occurs / switches channels; in milliseconds,
+    pBLEScan->setWindow(BLEScanWindow);  // How long to scan during the interval; in milliseconds.
     pBLEScan->setDuplicateFilter(false);
     pBLEScan->setMaxResults(0); // do not store the scan results, use callback only.
-#ifdef NIMBLE_OLDAPI
-    pBLEScan->start(scanTime/1000, nullptr, false);
-#else
-    pBLEScan->start(scanTime, false);
-#endif
 
+    pBLEScan->start(Scan_duration, false);
+
+    run_activeScan = true; // first time around - active scan
+    RUNTICKER(activeScan);
 }
 
 void bleDeliver(JsonObject &BLEdata) {
@@ -141,7 +148,14 @@ void bleDeliver(JsonObject &BLEdata) {
 
 void process_ble(void) {
     if (!pBLEScan->isScanning()) {
-        pBLEScan->start(scanTime, false);
+
+        if ( TIME_FOR(activeScan)) {
+            // log_d("active scan");
+            pBLEScan->setActiveScan(true);
+            DONE_WITH(activeScan);
+        }
+
+        pBLEScan->start(Scan_duration, false);
     }
     size_t size = 0;
     void *buffer = bleadv_queue->receive(&size, 0);
