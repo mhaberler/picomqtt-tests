@@ -109,12 +109,14 @@
 #endif
 
 
-#if defined(ARDUINO_M5STACK_Core2)
+#if defined(ARDUINO_M5STACK_Core2) && defined (BOTTOM2)
     // IMU - I2C0
-    #define IMU_IRQ_PIN 10
+    #define IMU_IRQ_PIN 27
 
     // DPS368
-    #define DPS0_IRQ_PIN 3
+    #define DPS0_IRQ_PIN 19
+    #define DPS0_WIRE Wire1
+
     // #define DPS1_IRQ_PIN 7
     // #define DPS2_IRQ_PIN 5
 
@@ -129,22 +131,22 @@
 #endif
 
 #if defined(ARDUINO_M5Stack_StampS3)
-#define I2C0_SDA 13 // grove
-#define I2C0_SCL 15
-#define I2C0_SPEED 400000
+    #define I2C0_SDA 13 // grove
+    #define I2C0_SCL 15
+    #define I2C0_SPEED 400000
 
-#define I2C1_SDA 1    // grove 2 white
-#define I2C1_SCL 3    // grove 1 yellow
-#define I2C1_SPEED 400000
+    #define I2C1_SDA 1    // grove 2 white
+    #define I2C1_SCL 3    // grove 1 yellow
+    #define I2C1_SPEED 400000
 
-#define IMU_IRQ_PIN 5 //aussen
+    #define IMU_IRQ_PIN 5 //aussen
 
-// DPS368
-#define DPS0_IRQ_PIN 7
+    // DPS368
+    #define DPS0_IRQ_PIN 7
 
-#define NEOPIXEL_LED 21
+    #define NEOPIXEL_LED 21
 
-#define SD_INSERTED -1
+    #define SD_INSERTED -1
 
 #endif
 

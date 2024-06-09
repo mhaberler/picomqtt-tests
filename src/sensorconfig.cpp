@@ -21,7 +21,11 @@ dps_sensors_t dps_sensors[] = {
         .status = 0,
         .sensor = nullptr,
         .temp_measure_mask = 7,
+#ifdef DPS0_WIRE
+        .wire = &DPS0_WIRE,
+#else
         .wire = &Wire,
+#endif
         .temp_osr = TEMP_OVERSAMPLING_RATE,
         .prs_osr = PRESS_OVERSAMPLING_RATE,
         .previous_alt = -1e6,
