@@ -23,7 +23,9 @@ bool sdcard_mounted = false;
 // state of the card detect pin - assume inserted if no CD pin
 bool sdcard_inserted = (SD_INSERTED > -1) ? false : true;
 
-
+uint32_t cardSize, mbfree;
+const char *sd_type ="none";
+sdcard_type_t sdType;
 
 #if ESP_FS_WS_USE_SD
 bool mountSDCard(void) {
@@ -34,24 +36,26 @@ bool mountSDCard(void) {
 
     switch (SD.cardType()) {
         case CARD_NONE:
-            log_info("No SD card attached");
+            sd_type = "No SD card present";
+            cardSize = 0;
+            mbfree = 0;
             return false;
         case CARD_MMC:
-            log_info("card type: MMC");
+            sd_type = "MMC";
             break;
         case CARD_SD:
-            log_info("card type: SDSC");
+            sd_type = "SDSC";
             break;
         case CARD_SDHC:
-            log_info("card type: SDHC");
+            sd_type = "SDHC";
             break;
         default:
-            log_info("card type: UNKNOWN");
+            sd_type = "unknown";
             break;
     }
-    uint64_t cardSize = SD.cardSize() / (1024 * 1024);
-    uint64_t mbfree = (SD.totalBytes() - SD.usedBytes())/ (1024 * 1024);
-    log_info("SD Card Size: %u MB free %u MB\n", (uint32_t) cardSize, (uint32_t) mbfree);
+    cardSize = SD.cardSize() / (1024 * 1024);
+    mbfree = (SD.totalBytes() - SD.usedBytes())/ (1024 * 1024);
+    log_info("SD Card: type %s Size: %u MB free %u MB", sd_type, cardSize, mbfree);
     return true;
 }
 #endif
@@ -64,7 +68,7 @@ void startFilesystem() {
         FILESYSTEM.format();
         ESP.restart();
     }
-    myWebServer.printFileList(LittleFS, Serial, "/", 2);
+    myWebServer.printFileList(LittleFS, Serial, "/", 1);
 }
 
 /*
@@ -84,38 +88,6 @@ void getFsInfo(fsInfo_t* fsInfo) {
 }
 #endif
 
-// static int ledval;
-
-////////////////////////////  HTTP Request Handlers  ////////////////////////////////////
-// void handleLed() {
-//     // http://xxx.xxx.xxx.xxx/led?val=1
-//     if (myWebServer.hasArg("val")) {
-//         int value = myWebServer.arg("val").toInt();
-// #ifdef RGB_LED
-//         if (value) {
-//             // digitalWrite(PIN_NEOPIXEL, HIGH);
-//             neopixelWrite(PIN_NEOPIXEL,RGB_BRIGHTNESS,0,0); // Red
-//         } else {
-//             // digitalWrite(PIN_NEOPIXEL, LOW);    // Turn the RGB LED off
-
-//             neopixelWrite(PIN_NEOPIXEL,0,0,0); // Off / black
-//         }
-//         ledval = value;
-// #else
-//         // digitalWrite(ledPin, value);
-// #endif
-//     }
-
-//     String reply = "LED is now ";
-// #ifdef RGB_BUILTIN
-//     reply += ledval ? "OFF" : "ON";
-// #else
-//     // reply += digitalRead(ledPin) ? "OFF" : "ON";
-// #endif
-//     myWebServer.send(200, "text/plain", reply);
-// }
-
-
 void webserver_setup() {
 
     RGBLED(0,64,64);
@@ -128,11 +100,11 @@ void webserver_setup() {
     // no CD pin - mount right away
     sdcard_mounted = mountSDCard();
     if (sdcard_mounted) {
-        myWebServer.printFileList(SD, Serial, "/", 2);
+        myWebServer.printFileList(SD, Serial, "/", 1);
     }
 #endif
     RGBLED(0,64,0);
-    // FILESYSTEM INIT
+
     startFilesystem();
 
     // Try to connect to stored SSID, start AP if fails after timeout
@@ -157,11 +129,8 @@ void webserver_setup() {
     log_info("Open /edit page to view and edit files");
     log_info("Open /restart page to reboot");
 
+    RGBLED(0,64,0);
 
-
-#ifdef RGB_LED
-    neopixelWrite(PIN_NEOPIXEL, 0, RGB_BRIGHTNESS,0); // green
-#endif
 }
 
 

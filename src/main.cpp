@@ -79,7 +79,7 @@ void setup() {
 
 #if defined(ARDUINO_M5STACK_CORES3) ||  defined(ARDUINO_M5STACK_Core2) || defined(ARDUINO_M5Stack_StampS3)
     Wire.begin();
-    Wire.setClock(I2C_400K);
+    Wire.setClock(I2C_100K);
     Wire1.begin();
     Wire1.setClock(I2C_400K);
 #if defined(DPS0_IRQ_PIN)

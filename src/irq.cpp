@@ -23,10 +23,10 @@ PicoSettings baro_settings(mqtt, "baro");
 
 // lost interrupts:
 // if we have not heard from a DPS3xx in i2c_timeout seconds, re-init device
-float_setting_t i2c_timeout(baro_settings, "i2c_timeout", 2.0);
+float_setting_t i2c_timeout(baro_settings, "i2c_timeout", 10.0);
 
 
-uint32_t irq_queue_full, measurements_queue_full, commit_fail;
+uint32_t hardirq_fail, softirq_fail, measurements_queue_full, commit_fail;
 
 bool dps368_irq(dps_sensors_t * dev, const float &timestamp);
 bool icm20948_irq(icm20948_t *dev, const float &timestamp);
@@ -59,7 +59,7 @@ void irq_handler(void *param) {
     if (xQueueSendFromISR(irq_queue, (const void*) &msg, NULL) != pdTRUE) {
         // should clear IRQ so as to not get stuck
         // arduino-esp32 wont permit i2c i/o here
-        irq_queue_full++;
+        hardirq_fail++;
     }
     TOGGLE(TRIGGER1);
 }
@@ -73,7 +73,7 @@ void post_softirq(void *dev) {
         .dev = dev
     };
     if (xQueueSend(irq_queue, (const void*) &msg, 0) != pdTRUE) {
-        irq_queue_full++;
+        softirq_fail++;
     }
     TOGGLE(TRIGGER1);
 }
@@ -149,7 +149,7 @@ void soft_irq(void* arg) {
                 }
             }
             if (imu_sensor.dev.device_present &&
-                    !imu_sensor.dev.device_initialized &&
+                    // !imu_sensor.dev.device_initialized &&
                     (now - imu_sensor.dev.last_heard > i2c_timeout.get())) {
                 log_e("%s timeout (%f sec) - reinit", imu_sensor.dev.topic, i2c_timeout.get());
                 imu_setup(&imu_sensor);

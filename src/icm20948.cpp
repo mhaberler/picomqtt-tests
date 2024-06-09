@@ -74,6 +74,8 @@ bool imu_setup(icm20948_t *dev) {
             dev->dev.irq_attached = false;
         }
 
+        log_i("imu found at 0x%x Wire%u",
+              dev->dev.i2caddr, (dev->wire == &Wire) ? 0: 1);
         dev->icm->enableDebugging(Serial);
         dev->icm->begin(*dev->wire, dev->dev.i2caddr);
 

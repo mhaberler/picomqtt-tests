@@ -250,13 +250,13 @@ void process_gps( const gpsSample_t &gs) {
 void process_measurements(void) {
     // TOGGLE(TRIGGER4);
 
-    if (irq_queue_full || measurements_queue_full || commit_fail) {
-        log_e("irq_queue_full=%d measurements_queue_full=%d commit_fail=%d",
-              irq_queue_full, measurements_queue_full, commit_fail);
-        irq_queue_full = 0;
+    if (softirq_fail || hardirq_fail || measurements_queue_full || commit_fail) {
+        log_e("softirq_fail=%d hardirq_fail=%d measurements_queue_full=%d commit_fail=%d",
+              softirq_fail, hardirq_fail, measurements_queue_full, commit_fail);
+         hardirq_fail = softirq_fail = 0;
         measurements_queue_full = 0;
         commit_fail = 0;
-        log_i("rbfree %u maxitem %u", measurements_queue->curr_free_size(), measurements_queue->max_item_size());
+        log_i("mq free %u mq maxitem %u", measurements_queue->curr_free_size(), measurements_queue->max_item_size());
 
     }
 

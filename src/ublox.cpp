@@ -81,7 +81,8 @@ bool ublox_setup(void) {
     }
     ublox_neo.setNavigationFrequency(gpsconf.navFreq);
     ublox_neo.setAutoPVTcallbackPtr(&ublox_nav_pvt);
-    log_i("ublox initialized 0x%x at Wire%u",
+    
+    log_i("ublox initialized 0x%x Wire%u",
           UBLOX_I2C_ADDR, (gpsconf.wire == &Wire) ? 0: 1);
     gpsconf.dev.device_initialized = true;
     return true;
