@@ -66,6 +66,12 @@
     #define TRIGGER3 13 // yellow 12
     #define TRIGGER4 0 // green 13
 
+#ifdef QUADRATURE_DECODER
+    #define PIN_FLOWSENSOR_A 17  // blue port
+    #define PIN_FLOWSENSOR_B 18
+#endif
+
+
 #endif
 
 
@@ -127,6 +133,15 @@
     #define SPI0_CLOCK -1
     #define SPI0_MOSI -1
     #define SPI0_MISO -1
+
+#ifdef FLOWSENSOR
+    #define PIN_FLOWSENSOR_A 13  // blue port
+#endif
+
+#ifdef QUADRATURE_DECODER
+    #define PIN_FLOWSENSOR_A 13  // blue port
+    #define PIN_FLOWSENSOR_B 14
+#endif
 
 #endif
 

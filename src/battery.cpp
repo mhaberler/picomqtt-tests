@@ -12,7 +12,7 @@ void battery_check(void) {
 #ifdef M5UNIFIED
     JsonDocument json;
     json["time"] = fseconds();
-#if 1
+
     M5.update();
 
     json["level"] = M5.Power.getBatteryLevel();
@@ -36,5 +36,5 @@ void battery_check(void) {
     auto publish = mqtt.begin_publish("system/battery", measureJson(json));
     serializeJson(json, publish);
     publish.send();
-#endif
+
 }

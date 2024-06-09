@@ -24,9 +24,15 @@ void stats_setup(void);
 void nfc_setup(void);
 void nfc_loop(void);
 void nfc_poll(void);
+void flow_report(bool force);
+void flow_setup(void);
 
 void sensor_loop(void) {
     process_measurements();
+
+#if defined(FLOWSENSOR) || defined(QUADRATURE_DECODER)
+    flow_report(false);
+#endif
 
 #ifdef UBLOX_SUPPORT
     if (TIME_FOR(gps)) {
@@ -81,6 +87,10 @@ void sensor_setup(void) {
         log_i("imu initialized");
     }
 #endif
+#if defined(FLOWSENSOR) || defined(QUADRATURE_DECODER)
+    flow_setup();
+#endif
+
 #ifdef NFC_SUPPORT
     nfc_setup();
     RUNTICKER(nfc);

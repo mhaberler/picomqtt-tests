@@ -37,6 +37,7 @@ void sensor_loop(void);
 void irq_setup(void);
 bool nfc_reader_present(void);
 void battery_check(void);
+void flow_report(bool force);
 
 ::WiFiServer mqtt_tcp_server(MQTT_TCP);
 ::WiFiServer mqtt_ws_server(MQTT_WS);
@@ -185,7 +186,6 @@ void loop() {
     sensor_loop();
     TOGGLE(TRIGGER2);
 
-#if 1
     if (TIME_FOR(internal)) {
         mqtt.publish("system/interval", String(internal_update_ms));
         mqtt.publish("system/free-heap", String(ESP.getFreeHeap()));
@@ -199,12 +199,13 @@ void loop() {
 #endif
         if (battery_conf.dev.device_present) {
             battery_check();
-        //    post_softirq(&battery_conf);
         }
         settings_tick();
+#if defined(FLOWSENSOR) || defined(QUADRATURE_DECODER)
+        flow_report(true);
+#endif
         DONE_WITH(internal);
     }
-#endif
 #ifdef M5UNIFIED
     // M5.update();
 #endif
