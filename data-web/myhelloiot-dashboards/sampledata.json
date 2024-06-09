@@ -1,0 +1,150 @@
+// wss://mqtt-test.mah.priv.at:1443
+// Plexiglas durchsichtig, 100s interval
+{
+    "id": "38:3B:26:B4:6D:27",
+    "rssi": -79,
+    "time": 2549.766602,
+    "brand": "GENERIC",
+    "model": "BM6 Battery Monitor",
+    "model_id": "BM6",
+    "batt": 21,
+    "device": "BM6 Tracker"
+},
+{
+    "id": "38:3B:26:B4:6D:27",
+    "name": "Battery Guard",
+    "rssi": -82,
+    "txpower": 0,
+    "brand": "GENERIC",
+    "model": "BM6 Battery Monitor",
+    "model_id": "BM6",
+    "type": "BATT",
+    "batt": 12,
+    "device": "BM6 Tracker"
+}^
+// Mopeka mounted
+{
+    "id": "F8:95:D1:79:44:21",
+    "rssi": -70,
+    "time": 2941.603516,
+    "brand": "Mopeka/Lippert",
+    "model": "Pro Check (Universal)/BottleCheck Sensor",
+    "model_id": "M1017",
+    "tempc": 20,
+    "tempf": 68,
+    "lvl_cm": 94.117032,
+    "lvl_in": 37.05394961,
+    "sync": false,
+    "volt": 2.9375,
+    "batt": 100,
+    "quality": 3,
+    "accx": -29,
+    "accy": 20
+},
+// Kubicek Otodata 1
+{
+    "id": "EB:7E:58:09:DC:7F",
+    "rssi": -72,
+    "time": 2693.697266,
+    "brand": "Otodata",
+    "model": "Rotarex-compatible Monitor",
+    "model_id": "RC1010",
+    "level": 50,
+    "status": 1024
+},
+// Kubicek Otodata 2
+// ble/cc68be331158
+{
+    "id": "CC:68:BE:33:11:58",
+    "rssi": -71,
+    "time": 3669.7229,
+    "brand": "Otodata",
+    "model": "Rotarex-compatible Monitor",
+    "model_id": "RC1010",
+    "level": 50,
+    "status": 1024
+},
+// TPMS on mah tank  
+// ble/80eaca11796f
+{
+    "id": "80:EA:CA:11:79:6F",
+    "rssi": -94,
+    "time": 3248.355957,
+    "brand": "GENERIC",
+    "model": "TPMS",
+    "model_id": "TPMS",
+    "count": 1,
+    "pres": 7.69877,
+    "tempc": 20.21,
+    "tempf": 68.378,
+    "batt": 56,
+    "alarm": false,
+    "mac": "80:EA:CA:11:79:6F"
+},
+// TPMS on mah tank  
+// ble/cc68be331158
+{
+    "id": "82:EA:CA:31:78:C8",
+    "rssi": -92,
+    "time": 3791.980713,
+    "brand": "GENERIC",
+    "model": "TPMS",
+    "model_id": "TPMS",
+    "count": 3,
+    "pres": 7.67273,
+    "tempc": 20.11,
+    "tempf": 68.198,
+    "batt": 29,
+    "alarm": false,
+    "mac": "82:EA:CA:31:78:C8"
+},
+// ble/82EACA3178C8
+{
+    "id": "82:EA:CA:31:78:C8",
+    "name": "TPMS3_3178C8",
+    "rssi": -89,
+    "brand": "GENERIC",
+    "model": "TPMS",
+    "model_id": "TPMS",
+    "type": "TIRE",
+    "count": 3,
+    "pres": 7.69321,
+    "tempc": 19.64,
+    "tempf": 67.352,
+    "batt": 29,
+    "alarm": false,
+    "mac": "82:EA:CA:31:78:C8"
+},
+// ShellyBlue Button1
+// The button press type is encoded as:
+// 0 - None (sent every 8 seconds if beacon mode is enabled)
+// 1 - Single short click
+// 2 - Double click
+// 3 - Triple click
+// 9 - Long press
+{
+    "id": "3C:2E:F5:69:84:2C",
+    "name": "SBBT-002C",
+    "rssi": -95,
+    "brand": "Shelly",
+    "model": "ShellyBLU Button1",
+    "model_id": "SBBT-002C",
+    "type": "BTN",
+    "packet": 9,
+    "batt": 100,
+    "button": 9,
+    "mac": "3C:2E:F5:69:84:2C"
+},
+{
+    "id": "3C:2E:F5:69:84:2C",
+    "name": "SBBT-002C",
+    "rssi": -87,
+    "brand": "Shelly",
+    "model": "ShellyBLU Button1",
+    "model_id": "SBBT-002C",
+    "type": "BTN",
+    "packet": 28,
+    "batt": 100,
+    "button": 0,
+    "mac": "3C:2E:F5:69:84:2C"
+}
