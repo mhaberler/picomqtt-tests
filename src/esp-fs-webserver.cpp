@@ -9,6 +9,7 @@
 extern bool sdcard_mounted;
 // state of the card detect pin - assume inserted if no CD pin
 extern bool sdcard_inserted;
+static MDNSResponder *mdns_responder;
 
 
 // Override default handleClient() method to increase connection speed
@@ -378,6 +379,7 @@ IPAddress FSWebServer::startWiFi(uint32_t timeout, bool apFlag, CallbackF fn) {
         MDNS.addService("http", "tcp", m_port);
 #else
 #if ESP_FS_WS_USE_MDNS
+#ifdef ORIGINAL_MDNS
         // Initialize mDNS
         ESP_ERROR_CHECK( mdns_init() );
         // Set mDNS hostname (required if you want to advertise services)
@@ -391,6 +393,23 @@ IPAddress FSWebServer::startWiFi(uint32_t timeout, bool apFlag, CallbackF fn) {
         ESP_ERROR_CHECK( mdns_service_add(HOSTNAME, "_http", "_tcp", HTTP_PORT, serviceTxtData, 1) );
         ESP_ERROR_CHECK( mdns_service_add(HOSTNAME, "_mqtt", "_tcp", MQTT_TCP, nullptr, 0) );
         ESP_ERROR_CHECK( mdns_service_add(HOSTNAME, "_mqtt-ws", "_tcp", MQTT_WS, nullptr, 0) );
+#else
+        if (!mdns_responder) {
+            mdns_responder = new MDNSResponder();
+        }
+        if (mdns_responder->begin(HOSTNAME)) {
+            log_i("MDNS responder started");
+            mdns_responder->addService("http", "tcp", HTTP_PORT);
+#ifdef MQTT_TCP
+            mdns_responder->addService("mqtt", "tcp", MQTT_TCP);
+#endif
+#ifdef MQTT_WS
+            mdns_responder->addService("mqtt-ws", "tcp", MQTT_WS);
+#endif
+            // mdns_responder->enableWorkstation(ESP_IF_WIFI_STA);
+        }
+
+#endif
 #endif
 #endif
 

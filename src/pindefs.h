@@ -66,10 +66,10 @@
     #define TRIGGER3 13 // yellow 12
     #define TRIGGER4 0 // green 13
 
-#ifdef QUADRATURE_DECODER
-    #define PIN_FLOWSENSOR_A 17  // blue port
-    #define PIN_FLOWSENSOR_B 18
-#endif
+    #ifdef QUADRATURE_DECODER
+        #define PIN_FLOWSENSOR_A 17  // blue port
+        #define PIN_FLOWSENSOR_B 18
+    #endif
 
 
 #endif
@@ -112,6 +112,16 @@
     #define TRIGGER1 5
     #define TRIGGER2 6
 
+    #ifdef FLOWSENSOR
+        #define PIN_FLOWSENSOR_A 13  // blue port
+    #endif
+
+    #ifdef QUADRATURE_DECODER
+        #define PIN_FLOWSENSOR_A 8 
+        #define PIN_FLOWSENSOR_B 10
+    #endif
+
+
 #endif
 
 
@@ -134,14 +144,14 @@
     #define SPI0_MOSI -1
     #define SPI0_MISO -1
 
-#ifdef FLOWSENSOR
-    #define PIN_FLOWSENSOR_A 13  // blue port
-#endif
+    #ifdef FLOWSENSOR
+        #define PIN_FLOWSENSOR_A 13  // blue port
+    #endif
 
-#ifdef QUADRATURE_DECODER
-    #define PIN_FLOWSENSOR_A 13  // blue port
-    #define PIN_FLOWSENSOR_B 14
-#endif
+    #ifdef QUADRATURE_DECODER
+        #define PIN_FLOWSENSOR_A 13  // blue port
+        #define PIN_FLOWSENSOR_B 14
+    #endif
 
 #endif
 
@@ -164,13 +174,13 @@
     #define SD_INSERTED -1
 
     #ifdef FLOWSENSOR
-    #define PIN_FLOWSENSOR_A 5
-#endif
+        #define PIN_FLOWSENSOR_A 5
+    #endif
 
-#ifdef QUADRATURE_DECODER
-    #define PIN_FLOWSENSOR_A 5  
-    #define PIN_FLOWSENSOR_B 7
-#endif
+    #ifdef QUADRATURE_DECODER
+        #define PIN_FLOWSENSOR_A 5
+        #define PIN_FLOWSENSOR_B 7
+    #endif
 
 #endif
 
