@@ -9,7 +9,8 @@
 #include "broker.hpp"
 
 void battery_check(void) {
-#ifdef M5UNIFIED
+
+#ifdef M5UNIFIED && (defined(ARDUINO_M5STACK_CORES3) ||  defined(ARDUINO_M5STACK_Core2))
     JsonDocument json;
     json["time"] = fseconds();
 
@@ -32,9 +33,10 @@ void battery_check(void) {
             json["text"]  = "unknown";
             break;
     }
-#endif
+
     auto publish = mqtt.begin_publish("system/battery", measureJson(json));
     serializeJson(json, publish);
     publish.send();
+#endif
 
 }

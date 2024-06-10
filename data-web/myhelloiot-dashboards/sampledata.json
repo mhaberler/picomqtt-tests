@@ -64,6 +64,29 @@
     "level": 50,
     "status": 1024
 },
+// Kubicek OAT
+{
+    "id": "CA:91:64:2C:9B:0E",
+    "name": "Ruuvi 9B0E",
+    "rssi": -62,
+    "time": 4818.765625,
+    "brand": "Ruuvi",
+    "model": "RuuviTag",
+    "model_id": "RuuviTag_RAWv2",
+    "tempc": 27.17,
+    "tempf": 80.906,
+    "hum": 55.715,
+    "pres": 912.73,
+    "accx": -0.72961476,
+    "accy": 0.3138128,
+    "accz": 0.63154826,
+    "volt": 3.199,
+    "tx": 4,
+    "mov": 0,
+    "seq": 1,
+    "mac": "CA:91:64:2C:9B:0E",
+    "batt": 100
+},
 // TPMS on mah tank  
 // ble/80eaca11796f
 {

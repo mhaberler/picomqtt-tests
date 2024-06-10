@@ -23,7 +23,8 @@
     #define Scan_duration 10000 //define the duration for a scan; in milliseconds
 #endif
 #ifndef TimeBtwActive
-    #define TimeBtwActive 55555 //define default time between two BLE active scans when general passive scanning is selected; in milliseconds
+    // #define TimeBtwActive 55555 //define default time between two BLE active scans when general passive scanning is selected; in milliseconds
+    #define TimeBtwActive 1000*3600 //define default time between two BLE active scans when general passive scanning is selected; in milliseconds
 #endif
 
 #ifndef BLE_ADV_QUEUELEN

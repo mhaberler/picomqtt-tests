@@ -81,7 +81,7 @@ void setup() {
     Wire.begin();
     Wire.setClock(I2C_100K);
     Wire1.begin();
-    Wire1.setClock(I2C_400K);
+    Wire1.setClock(I2C_100K);
 #if defined(DPS0_IRQ_PIN)
     pinMode(DPS0_IRQ_PIN, INPUT_PULLUP);
 #endif

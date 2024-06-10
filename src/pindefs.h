@@ -163,6 +163,15 @@
 
     #define SD_INSERTED -1
 
+    #ifdef FLOWSENSOR
+    #define PIN_FLOWSENSOR_A 5
+#endif
+
+#ifdef QUADRATURE_DECODER
+    #define PIN_FLOWSENSOR_A 5  
+    #define PIN_FLOWSENSOR_B 7
+#endif
+
 #endif
 
 #if defined(TRACE_PINS)

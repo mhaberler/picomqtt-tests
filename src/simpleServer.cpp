@@ -25,9 +25,10 @@ bool sdcard_inserted = (SD_INSERTED > -1) ? false : true;
 
 uint32_t cardSize, mbfree;
 const char *sd_type ="none";
+#if ESP_FS_WS_USE_SD
+
 sdcard_type_t sdType;
 
-#if ESP_FS_WS_USE_SD
 bool mountSDCard(void) {
     if  (!SD.begin(SPI0_SLAVE_SELECT_SDCARD, SPI, SD_SPEED, "/sd")) {
         log_error("Card Mount Failed");
@@ -129,7 +130,7 @@ void webserver_setup() {
     log_info("Open /edit page to view and edit files");
     log_info("Open /restart page to reboot");
 
-    RGBLED(0,64,0);
+    RGBLED(0,0,64);
 
 }
 
