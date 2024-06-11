@@ -80,8 +80,10 @@ void setup() {
 #if defined(ARDUINO_M5STACK_CORES3) ||  defined(ARDUINO_M5STACK_Core2) || defined(ARDUINO_M5Stack_StampS3)
     Wire.begin();
     Wire.setClock(I2C_100K);
+#if defined(I2C1_SDA)
     Wire1.begin();
     Wire1.setClock(I2C_100K);
+#endif
 #if defined(DPS0_IRQ_PIN)
     pinMode(DPS0_IRQ_PIN, INPUT_PULLUP);
 #endif
@@ -100,9 +102,17 @@ void setup() {
 
     delay(10);
     i2c_scan(Wire);
+#if defined(I2C1_SDA)
     i2c_scan(Wire1);
+#endif
 
 #endif
+
+#if defined(ARDUINO_M5Stack_ATOMS3)
+    Wire1.begin(I2C1_SDA, I2C1_SCL, I2C1_SPEED);
+    i2c_scan(Wire1);
+#endif
+
 #if defined(DEVKITC) || defined(M5STAMP_C3U)
 
     Wire.begin(I2C0_SDA, I2C0_SCL, I2C0_SPEED);
@@ -118,7 +128,7 @@ void setup() {
 #if defined(DPS2_IRQ_PIN)
     pinMode(DPS2_IRQ_PIN, INPUT_PULLUP);
 #endif
-#if defined(IMU_IRQ_PIN)
+#if defined(IMU_SUPPORT)
     pinMode(IMU_IRQ_PIN, INPUT_PULLUP);
 #endif
 #if defined(TRACE_PINS)

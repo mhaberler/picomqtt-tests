@@ -96,10 +96,13 @@ void soft_irq(void* arg) {
                         dps368_irq(static_cast<dps_sensors_t *>(msg.dev), msg.timestamp);
                     }
                     break;
+#if defined(IMU_SUPPORT)
+
                 case DEV_ICM_20948: {
                         icm20948_irq(static_cast<icm20948_t *>(msg.dev), msg.timestamp);
                     }
                     break;
+#endif
                 case DEV_M5STACK_IMU:
                     break;
                 case DEV_NEO_M9N:
@@ -148,6 +151,8 @@ void soft_irq(void* arg) {
                     d->dev.last_heard = now; // leave some time till next kick
                 }
             }
+#if defined(IMU_SUPPORT)
+
             if (imu_sensor.dev.device_present &&
                     // !imu_sensor.dev.device_initialized &&
                     (now - imu_sensor.dev.last_heard > i2c_timeout.get())) {
@@ -155,6 +160,7 @@ void soft_irq(void* arg) {
                 imu_setup(&imu_sensor);
                 imu_sensor.dev.last_heard = now; // leave some time till next kick
             }
+#endif
             DONE_WITH(deadman);
         }
 

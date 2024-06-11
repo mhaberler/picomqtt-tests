@@ -155,6 +155,36 @@
 
 #endif
 
+
+#if defined(ARDUINO_M5Stack_ATOMS3)
+    #define I2C1_SDA 2 // grove
+    #define I2C1_SCL 1
+    #define I2C1_SPEED 400000
+
+    // #define I2C1_SDA 38 // grove 2 white
+    // #define I2C1_SCL 39   // grove 1 yellow
+    // #define I2C1_SPEED 400000
+
+    // #define IMU_IRQ_PIN 5 //aussen
+
+    // DPS368
+    // #define DPS0_IRQ_PIN 6
+
+    // #define NEOPIXEL_LED 21
+
+    #define SD_INSERTED -1
+
+    #ifdef FLOWSENSOR
+        #define PIN_FLOWSENSOR_A 5
+    #endif
+
+    #ifdef QUADRATURE_DECODER
+        #define PIN_FLOWSENSOR_A 8
+        #define PIN_FLOWSENSOR_B 7
+    #endif
+
+#endif
+
 #if defined(ARDUINO_M5Stack_StampS3)
     #define I2C0_SDA 13 // grove
     #define I2C0_SCL 15

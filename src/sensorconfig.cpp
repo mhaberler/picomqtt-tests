@@ -87,6 +87,8 @@ dps_sensors_t dps_sensors[] = {
 };
 uint32_t num_dps_sensors = (sizeof(dps_sensors)/sizeof(dps_sensors[0]));
 
+#if defined(IMU_SUPPORT)
+
 extern ICM_20948_I2C icm;
 icm20948_t imu_sensor = {
     .dev = {
@@ -103,6 +105,7 @@ icm20948_t imu_sensor = {
     .wire = &Wire,
     .icm = &icm,
 };
+#endif
 
 // ublox is polled I/O for now
 extern SFE_UBLOX_GNSS ublox_neo;

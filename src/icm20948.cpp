@@ -26,6 +26,8 @@ double_setting_t ref_w(imu_settings, "ref_w", 1.0);
 double_setting_t heading_correction(imu_settings, "hdg_corr", 0.0);
 float_setting_t quat9_rate(imu_settings, "quat9_rate", 5.0);
 
+#if defined(IMU_SUPPORT)
+
 bool icm20948_irq(icm20948_t *dev, const float &timestamp) {
     ICM_20948_Status_e ret;
     imuSample_t *is = nullptr;
@@ -463,3 +465,4 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void) {
 
     return worstResult;
 }
+#endif
