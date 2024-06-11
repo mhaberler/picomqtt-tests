@@ -111,7 +111,7 @@ void webserver_setup() {
     // String ssid(AP_SSID_PREFIX);
     // ssid += WiFi.macAddress();
     // log_i("mac: %s", ssid.c_str());
-
+    // see https://stackoverflow.com/questions/65873683/how-do-you-erase-esp32-wifi-smartconfig-credentials-from-flash
     // Try to connect to stored SSID, start AP if fails after timeout
     myWebServer.setAP(AP_SSID, AP_PASSWORD);
 
