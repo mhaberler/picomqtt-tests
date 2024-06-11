@@ -108,6 +108,10 @@ void webserver_setup() {
 
     startFilesystem();
 
+    // String ssid(AP_SSID_PREFIX);
+    // ssid += WiFi.macAddress();
+    // log_i("mac: %s", ssid.c_str());
+
     // Try to connect to stored SSID, start AP if fails after timeout
     myWebServer.setAP(AP_SSID, AP_PASSWORD);
 
