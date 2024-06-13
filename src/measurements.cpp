@@ -48,6 +48,9 @@ void process_pressure(const baroSample_t s) {
     float delta_t = timestamp_sec - dev->previous_time;  // sec
     float vertical_speed = delta_alt/delta_t;       // ms/s
 
+    // record for next cycle
+    dev->previous_time = timestamp_sec;
+    dev->previous_alt = alt;
 
 #ifdef EKF
     // prime the altitude variance
@@ -253,7 +256,7 @@ void process_measurements(void) {
     if (softirq_fail || hardirq_fail || measurements_queue_full || commit_fail) {
         log_e("softirq_fail=%d hardirq_fail=%d measurements_queue_full=%d commit_fail=%d",
               softirq_fail, hardirq_fail, measurements_queue_full, commit_fail);
-         hardirq_fail = softirq_fail = 0;
+        hardirq_fail = softirq_fail = 0;
         measurements_queue_full = 0;
         commit_fail = 0;
         log_i("mq free %u mq maxitem %u", measurements_queue->curr_free_size(), measurements_queue->max_item_size());
