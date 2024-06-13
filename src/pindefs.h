@@ -197,7 +197,7 @@
     #define IMU_IRQ_PIN 5 //aussen
 
     // DPS368
-    #define DPS0_IRQ_PIN 7
+    #define DPS0_IRQ_PIN 9
 
     #define NEOPIXEL_LED 21
 
