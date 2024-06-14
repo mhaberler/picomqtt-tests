@@ -3,14 +3,9 @@
 #include "esp32-hal.h"
 #include "sensor.hpp"
 #include "params.hpp"
-#include "prefs.hpp"
+#include "settings.hpp"
 #include "i2cio.hpp"
 #include "pindefs.h"
-
-#define MAX_SENSORS 3
-#ifdef EKF
-    static HKalF ekfs[MAX_SENSORS];  // per-device Kalman filter
-#endif
 
 bool dps368_irq(dps_sensors_t * dev, const float &timestamp) {
     float value;
@@ -176,9 +171,6 @@ int16_t dps368_setup(int i) {
         goto FAIL;
     }
     dev->dev.device_initialized = true;
-#ifdef EKF
-    dev->ekf = &ekfs[i];  // per-device Kalman filter
-#endif
     log_e("%s: init %d success", dev->dev.topic, dev->dev.init_count);
     return DPS__SUCCEEDED;
 

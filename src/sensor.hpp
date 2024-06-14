@@ -6,6 +6,9 @@
 #include <MFRC522DriverI2C.h>
 #include <MFRC522Extended.h>
 #include <NfcAdapter.h>
+#ifdef SMOOTH
+    #include "ExponentialSmoothing.hpp"
+#endif
 
 #include "irq.hpp"
 #ifdef EKF
@@ -77,8 +80,14 @@ typedef struct  {
     float previous_time;
     uint32_t initial_alt_values;
 #ifdef EKF
-    HKalF *ekf; // per-device EKF instance
+    HKalF  *ekf; //  per-device EKF instance
 #endif
+
+#ifdef SMOOTH
+    ExponentialSmoothing *alt;
+    ExponentialSmoothing *vspeed;
+#endif
+
 } dps_sensors_t;
 
 // Setting value can be calculated as follows:

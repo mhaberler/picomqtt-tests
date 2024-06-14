@@ -18,7 +18,7 @@
 #endif
 #include "sensor.hpp"
 #include "params.hpp"
-#include "prefs.hpp"
+#include "settings.hpp"
 #include "fmicro.h"
 
 #include "pindefs.h"

@@ -1,7 +1,7 @@
 
 
 #include "params.hpp"
-#include "prefs.hpp"
+#include "settings.hpp"
 #include "pindefs.h"
 #include "FunctionalInterrupt.h"
 #include "fmicro.h"

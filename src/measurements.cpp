@@ -1,10 +1,14 @@
 #include "sensor.hpp"
 #include "params.hpp"
-#include "prefs.hpp"
+#include "settings.hpp"
 #include "meteo.hpp"
 #ifdef EKF
     #include "hKalF_acc.h"
 #endif
+#ifdef SMOOTH
+    #include "ExponentialSmoothing.hpp"
+#endif
+
 #include "TimerStats.hpp"
 #include "ArduinoJson.h"
 #include "broker.hpp"
@@ -52,6 +56,11 @@ void process_pressure(const baroSample_t s) {
     dev->previous_time = timestamp_sec;
     dev->previous_alt = alt;
 
+#ifdef SMOOTH
+    dev->alt->Push(alt);
+    dev->vspeed->Push(vertical_speed);
+#endif
+
 #ifdef EKF
     // prime the altitude variance
     if (dev->initial_alt_values > 0) {
@@ -76,6 +85,12 @@ void process_pressure(const baroSample_t s) {
         json["hPa"] = s.value;
         json["altitude"] = alt;
         json["verticalSpeedRaw"] = vertical_speed;
+
+#ifdef SMOOTH
+        json["verticalSpeedSmoothed"] = dev->vspeed->Value();
+        json["altitudeSmoothed"] = dev->alt->Value();
+#endif
+
 
 #ifdef EKF
         json["verticalSpeedKF"] = dev->ekf->verticalSpeed();

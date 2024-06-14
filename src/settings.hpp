@@ -21,6 +21,8 @@ extern PicoSettings gps_settings;
 extern int_setting_t nav_rate;
 
 extern PicoSettings baro_settings;
+extern float_setting_t i2c_timeout;
+extern int_setting_t alpha_pct;
 
 void settings_setup();
 void settings_tick();

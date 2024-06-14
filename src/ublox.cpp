@@ -8,7 +8,7 @@
 #include "sensor.hpp"
 #include "broker.hpp"
 #include "params.hpp"
-#include "prefs.hpp"
+#include "settings.hpp"
 #include "tickers.hpp"
 #include "fmicro.h"
 #include <chrono>
@@ -19,7 +19,6 @@
 #endif
 
 extern gps_sensor_t gpsconf;
-PicoSettings gps_settings(mqtt, "gps");
 
 #ifdef UBLOX_SUPPORT
 
@@ -33,7 +32,7 @@ ublox_nav_pvt (UBX_NAV_PVT_data_t *ub) {
     if (measurements_queue->send_acquire((void **)&gs, sz, 0) == pdTRUE) {
         gs->dev = &gpsconf;
         gs->timestamp = fseconds(),
-        gs->type = SAMPLE_GPS;
+            gs->type = SAMPLE_GPS;
         memcpy((void *)&gs->nav_data, ub, sizeof(UBX_NAV_PVT_data_t));
         if (measurements_queue->send_complete(gs) != pdTRUE) {
             commit_fail++;
@@ -81,7 +80,7 @@ bool ublox_setup(void) {
     }
     ublox_neo.setNavigationFrequency(gpsconf.navFreq);
     ublox_neo.setAutoPVTcallbackPtr(&ublox_nav_pvt);
-    
+
     log_i("ublox initialized 0x%x Wire%u",
           UBLOX_I2C_ADDR, (gpsconf.wire == &Wire) ? 0: 1);
     gpsconf.dev.device_initialized = true;
@@ -89,7 +88,8 @@ bool ublox_setup(void) {
 }
 
 EXT_TICKER(gps);
-int_setting_t nav_rate(gps_settings, "nav_rate", 1, [] {
+
+void set_nav_rate(int nav_rate) {
     if (gpsconf.dev.device_initialized) {
         if (nav_rate <= 0) {
             log_i("gps sampling stopped");
@@ -101,8 +101,7 @@ int_setting_t nav_rate(gps_settings, "nav_rate", 1, [] {
             ublox_neo.setNavigationFrequency(nav_rate);
         }
     }
-});
-
+}
 
 #else
 bool ublox_setup() {

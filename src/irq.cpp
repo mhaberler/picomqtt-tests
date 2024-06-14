@@ -2,7 +2,7 @@
 #include "esp32-hal.h"
 #include "sensor.hpp"
 #include "params.hpp"
-#include "prefs.hpp"
+#include "settings.hpp"
 #include "broker.hpp"
 #include "tickers.hpp"
 #include "fmicro.h"
@@ -18,12 +18,6 @@ espidf::RingBuffer *measurements_queue;
 TaskHandle_t softirq_task;
 EXT_TICKER(gps);
 EXT_TICKER(deadman);
-
-PicoSettings baro_settings(mqtt, "baro");
-
-// lost interrupts:
-// if we have not heard from a DPS3xx in i2c_timeout seconds, re-init device
-float_setting_t i2c_timeout(baro_settings, "i2c_timeout", 10.0);
 
 
 uint32_t hardirq_fail, softirq_fail, measurements_queue_full, commit_fail;

@@ -7,24 +7,10 @@
 #include "tickers.hpp"
 #include "sensor.hpp"
 #include "broker.hpp"
-#include "prefs.hpp"
+#include "settings.hpp"
 
 
 ICM_20948_I2C icm;
-
-PicoSettings imu_settings(mqtt, "imu");
-
-bool_setting_t set_reference_correction(imu_settings, "refpos", false);
-bool_setting_t apply_reference_correction(imu_settings, "apply_refpos", true);
-
-// default to identity quaternion
-double_setting_t ref_x(imu_settings, "ref_x", 0.0);
-double_setting_t ref_y(imu_settings, "ref_y", 0.0);
-double_setting_t ref_z(imu_settings, "ref_z", 0.0);
-double_setting_t ref_w(imu_settings, "ref_w", 1.0);
-
-double_setting_t heading_correction(imu_settings, "hdg_corr", 0.0);
-float_setting_t quat9_rate(imu_settings, "quat9_rate", 5.0);
 
 #if defined(IMU_SUPPORT)
 
