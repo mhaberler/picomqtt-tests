@@ -16,6 +16,7 @@ extern double_setting_t ref_z;
 extern double_setting_t ref_w;
 extern double_setting_t heading_correction;
 extern int_setting_t dmp_rate;
+extern float_setting_t quat9_rate;
 
 extern PicoSettings gps_settings;
 extern int_setting_t nav_rate;

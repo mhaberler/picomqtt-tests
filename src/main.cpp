@@ -20,7 +20,6 @@
 #include "params.hpp"
 #include "settings.hpp"
 #include "fmicro.h"
-
 #include "pindefs.h"
 
 #if __has_include("myconfig.h")
@@ -77,7 +76,7 @@ void setup() {
     RGBLED(64,0,0);
 
 
-#if defined(ARDUINO_M5STACK_CORES3) ||  defined(ARDUINO_M5STACK_Core2) || defined(ARDUINO_M5Stack_StampS3)
+#if defined(ARDUINO_M5STACK_CORES3) ||  defined(ARDUINO_M5STACK_Core2) 
     Wire.begin();
     Wire.setClock(I2C_100K);
 #if defined(I2C1_SDA)
@@ -108,14 +107,15 @@ void setup() {
 
 #endif
 
-#if defined(ARDUINO_M5Stack_ATOMS3)
-    Wire1.begin(I2C1_SDA, I2C1_SCL, I2C1_SPEED);
-    i2c_scan(Wire1);
-#endif
+// #if defined(ARDUINO_M5Stack_ATOMS3)
+//     Wire1.begin(I2C1_SDA, I2C1_SCL, I2C1_SPEED);
+//     i2c_scan(Wire1);
+// #endif
 
-#if defined(DEVKITC) || defined(M5STAMP_C3U)
-
+#if defined(DEVKITC) || defined(M5STAMP_C3U) || defined(ARDUINO_M5Stack_ATOMS3) || defined(ARDUINO_M5Stack_StampS3)
+#if defined(I2C0_SDA)
     Wire.begin(I2C0_SDA, I2C0_SCL, I2C0_SPEED);
+#endif
 #if defined(I2C1_SDA)
     Wire1.begin(I2C1_SDA, I2C1_SCL, I2C1_SPEED);
 #endif
@@ -135,7 +135,9 @@ void setup() {
     TRIGGER_SETUP(TRIGGER1);
     TRIGGER_SETUP(TRIGGER2);
 #endif
+#if defined(I2C0_SDA)
     i2c_scan(Wire);
+#endif
 #if defined(I2C1_SDA)
     i2c_scan(Wire1);
 #endif

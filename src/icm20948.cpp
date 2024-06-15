@@ -65,7 +65,7 @@ bool imu_setup(icm20948_t *dev) {
         log_i("imu found at 0x%x Wire%u",
               dev->dev.i2caddr, (dev->wire == &Wire) ? 0: 1);
         dev->icm->enableDebugging(Serial);
-        dev->icm->begin(*dev->wire, dev->dev.i2caddr);
+        dev->icm->begin(*dev->wire, dev->dev.i2caddr == ICM_20948_I2C_ADDR_AD1);
 
         uint8_t whoami = dev->icm->getWhoAmI();
         if (whoami != ICM_20948_WHOAMI) {

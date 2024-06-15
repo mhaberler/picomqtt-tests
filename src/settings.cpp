@@ -116,7 +116,7 @@ extern ICM_20948_I2C icm;
 icm20948_t imu_sensor = {
     .dev = {
         .type = DEV_ICM_20948,
-        .i2caddr = ICM_20948_I2C_ADDR_AD1,
+        .i2caddr =  ICM_20948_I2C_ADDR,
         .irq_pin = IMU_IRQ_PIN,
         .irq_pin_mode = INPUT, //  breakout board has pullup resistor
         .irq_pin_edge= FALLING,
@@ -125,7 +125,7 @@ icm20948_t imu_sensor = {
         .device_initialized = false,
         .topic = "imu"
     },
-    .wire = &Wire,
+    .wire =  IMU_WIRE,
     .icm = &icm,
 };
 #endif

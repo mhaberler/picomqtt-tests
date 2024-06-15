@@ -190,11 +190,9 @@
     #define I2C0_SCL 15
     #define I2C0_SPEED 400000
 
-    #define I2C1_SDA 1    // grove 2 white
-    #define I2C1_SCL 3    // grove 1 yellow
-    #define I2C1_SPEED 400000
+    #define ICM_20948_I2C_ADDR ICM_20948_I2C_ADDR_AD1
 
-    #define IMU_IRQ_PIN 5 //aussen
+    #define IMU_IRQ_PIN 1
 
     // DPS368
     #define DPS0_IRQ_PIN 9
@@ -213,6 +211,14 @@
     #endif
 
 #endif
+
+#if !defined(ICM_20948_I2C_ADDR)
+#define ICM_20948_I2C_ADDR ICM_20948_I2C_ADDR_AD1
+#endif
+#if !defined(IMU_WIRE)
+#define IMU_WIRE &Wire
+#endif
+
 
 #if defined(TRACE_PINS)
 #define TRIGGER_SETUP(pin) \
