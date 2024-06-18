@@ -37,3 +37,6 @@
 [submodule "lib/hilmar-ekf"]
 	path = lib/hilmar-ekf
 	url = https://github.com/BalloonWare/hilmar-ekf.git
+[submodule "data-web/myhelloiot"]
+	path = data-web/myhelloiot
+	url = https://github.com/mhaberler/myhelloiot.git
