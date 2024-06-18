@@ -1,9 +1,10 @@
 # MQTT Sensorbox
+
 The purpose of this device is to:
 
 - publish values of attached sensors via MQTT-over-Websockets and MQTT-over-TCP
 - typical sensors would be barometric pressure, an IMU (accelerometer/gyro/magnetometer), and a GPS device
-- provide optional postprocessing of sensor data 
+- provide optional postprocessing of sensor data
 - run an embedded MQTT broker with Websockets adapter
 - publish advertisement-based BLE sensor reports as supported by the [Theengs library](https://github.com/theengs/decoder)
 - run an embedded webserver to host and serve web applications
@@ -17,7 +18,8 @@ The purpose of this device is to:
 A typical use case would be Sensorbox connecting to a mobile's WiFi hotspot and offer its services to the mobile and other Wifi clients of the mobile's WiFi hotspot.
 
 ## Usage Overview
-````mermaid
+
+```mermaid
 
 graph LR
 
@@ -31,22 +33,21 @@ flash[("web apps+\nassets\nSD card")] <--> webserver
 
 mdns["Multicast\nDNS"] --server name\nannouncement--> clients
 
-````
+```
 
 ## Supported protocols and features
 
 - HTTP service on port 80
-- MQTT-over-Websockets 
+- MQTT-over-Websockets
 - MQTT-over-TCP
 - Host(.local) and service announcements via mDNS and [SSDP](https://github.com/luc-github/ESP32SSDP#2.0.0) (aka "Universal Plug and Play")
 - configuration via NVS-persistent topics - see [PicoSettings](https://github.com/mhaberler/PicoSettings)
-- NFC reader support including Type 4 tags, like the Ruuvi Sensor - see repos https://github.com/mhaberler/NDEF https://github.com/mhaberler/Arduino_MFRC522v2 
+- NFC reader support including Type 4 tags, like the Ruuvi Sensor - see repos [https://github.com/mhaberler/NDEF](https://github.com/mhaberler/NDEF) [https://github.com/mhaberler/Arduino_MFRC522v2](https://github.com/mhaberler/Arduino_MFRC522v2)
 - Digital Elevation Models in pmtiles format, see [this project](https://github.com/mhaberler/embedded-protomaps) for hints to generate your own
-
 
 ## Component Overview
 
-````mermaid
+```mermaid
 graph LR
     scanner["BLE\n scanner"] -- adv --> decoder["Theengs\n decoder"] --sensor\nvalues-->broker("MQTT\n broker")
     baro["pressure\nsensors"] -- "pressure\nbarometric altitude" -->broker
@@ -65,7 +66,7 @@ airspace[("airspace\nshapes")]-->airspacelookup
 broker--websockets or\nTCP-->clients
 webserver["web\nserver"] <--HTTP--> clients["web clients\ndevices"]
 mdns["Multicast\nDNS"] --server\nname\nannouncement-->clients
-````
+```
 
 ## Platform and Supported Hardware
 
@@ -88,10 +89,11 @@ all features except airspace lookup
 
 ## Limitations
 
-- no SSL support 
+- no SSL support
 - assumed to run in a trusted environment
 
-## Parts used 
+## Parts used
+
 - [PicoMQTT](https://github.com/mlesniew/PicoMQTT)  and [PicoWebsockets](https://github.com/mlesniew/PicoWebsocket) by Michał Leśniewski
 - [PicoSettings](https://github.com/mhaberler/PicoSettings) by myself
 - [esp-fs-webserver](https://github.com/cotestatnt/esp-fs-webserver) by Tolentino Cotesta
@@ -104,31 +106,34 @@ all features except airspace lookup
 todo
 
 ## Client Test Results
+
 the following clients were successfully tested against PicoMQTT/PicoWebsockets and should work with SenorBox:
 
 ### MQTT-Websockets
-- Sensor-Logger Android 1.31.4 build 3145890 
+
+- Sensor-Logger Android 1.31.4 build 3145890
 - Sensor-Logger iOS 1.32 build 4
-- EasyMQTT iOS 1.16.1b503 
+- EasyMQTT iOS 1.16.1b503
 - myhelloiot 1.1.5
 - IoT MQTT Panel 2.14.58
 - browser: MQTT.js 5.5.4 - see data/mqtt.html
 - browser: paho-mqtt 1.1.0 - see data/paho.html
 - nodejs: MQTT.js 5.5.4 - see nodejs/mqtt_ws.js
-- Python https://pypi.org/project/paho-mqtt/ - see python/*.py
-
+- Python [https://pypi.org/project/paho-mqtt/](https://pypi.org/project/paho-mqtt/) - see python/*.py
 
 ### MQTT-over-TCP
+
 - OpenMQTT Gateway - development, commit f278555
 - node-red Node-RED version: v3.1.9
 - mymqtt.app Android 2.3.3 (7507)
 - mymqtt.app iOS 1.1.1 (3)
-- EasyMQTT iOS 1.16.1b503 
+- EasyMQTT iOS 1.16.1b503
 - IoT MQTT Panel 2.14.58
-- Python https://pypi.org/project/paho-mqtt/ - see python/*.py
+- Python [https://pypi.org/project/paho-mqtt/](https://pypi.org/project/paho-mqtt/) - see python/*.py
 - nodejs: MQTT.js 5.5.4 - see nodejs/mqtt_tcp.js
 
-### failed 
-- MQTT board - requires TLS  https://mqttboard.flespi.io/#/
-- MQTT Tiles - requires TLS  https://mqtttiles.flespi.io/#/
-- MQTT.cool - requires TLS   https://testclient-cloud.mqtt.cool/
+### failed
+
+- MQTT board - requires TLS  [https://mqttboard.flespi.io/#/](https://mqttboard.flespi.io/#/)
+- MQTT Tiles - requires TLS  [https://mqtttiles.flespi.io/#/](https://mqtttiles.flespi.io/#/)
+- MQTT.cool - requires TLS   [https://testclient-cloud.mqtt.cool/](https://testclient-cloud.mqtt.cool/)

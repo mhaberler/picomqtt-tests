@@ -137,7 +137,6 @@
                 topic="preferences/baro/alpha"
                 puboptions={{ retain: true }}
                 format={Percent()}
-
             />
         </Card>
 
