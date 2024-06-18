@@ -1,6 +1,3 @@
-[submodule "myhelloiot"]
-	path = myhelloiot
-	url = https://github.com/mhaberler/myhelloiot/
 [submodule "libwebp"]
 	path = libwebp
 	url = https://github.com/webmproject/libwebp.git
